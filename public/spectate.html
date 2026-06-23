@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>달란트마블 관전</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="effects.css">
+  <style>
+    body{background:radial-gradient(circle at 20% 10%,#fff8d8 0 9%,transparent 10%),radial-gradient(circle at 85% 18%,#c7f0f0 0 8%,transparent 9%),linear-gradient(135deg,#f7eecf,#d9f3ed)}
+    .spec-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;padding:12px;max-width:1440px;margin:auto;height:100vh;box-sizing:border-box}
+    .spec-header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:6px 8px 10px}
+    .spec-header h1{margin:0;color:#e75138;font-size:clamp(24px,3.5vw,40px);text-shadow:0 3px white}
+    .spec-hud{display:flex;gap:10px;align-items:center;margin-left:auto}
+    #spec-timer{background:#253c5b;color:#fff8d5;border:3px solid #fff2a9;border-radius:14px;padding:7px 14px;font-size:clamp(18px,2.5vw,28px);font-weight:800;box-shadow:0 4px #17304a}
+    #spec-stars{background:#fff8c8;border:3px solid #f5c430;border-radius:14px;padding:7px 14px;font-size:clamp(14px,2vw,22px);font-weight:800;color:#75431f}
+    .spec-board-wrap{overflow:auto;display:flex;align-items:center;justify-content:center}
+    .spec-board{width:100%;max-height:calc(100vh - 80px);aspect-ratio:1/1;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);gap:4px;padding:9px;background:linear-gradient(135deg,#965426,#6c3517);border:5px solid #fff0b9;border-radius:25px;box-shadow:0 7px 0 #54260f,0 16px 30px #4a2c1960;position:relative}
+    .spec-side{display:flex;flex-direction:column;gap:10px;overflow:auto}
+    .score-card{background:#fffdf7;border:4px solid #78431e;padding:12px;border-radius:16px;box-shadow:0 5px 0 #d39354}
+    .score-card h2{margin:0 0 8px;font-size:clamp(14px,1.8vw,20px)}
+    .score-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px dashed #e2cda8;font-size:clamp(13px,1.5vw,17px)}
+    .score-row:last-child{border:none}
+    .score-av{font-size:1.6em;line-height:1}
+    .score-bar-wrap{flex:1;background:#f0e5d0;border-radius:8px;height:12px;overflow:hidden}
+    .score-bar{height:100%;border-radius:8px;transition:width .6s ease}
+    .score-num{font-weight:800;min-width:60px;text-align:right;font-size:clamp(12px,1.4vw,16px)}
+    .cur-turn{background:#fff9d4;border:3px solid #f5c430;border-radius:12px;padding:8px;text-align:center;font-size:clamp(13px,1.6vw,18px)}
+    .spec-log{background:#fffdf7;border:4px solid #78431e;padding:10px;border-radius:16px;box-shadow:0 5px 0 #d39354;font-family:system-ui,'Malgun Gothic',sans-serif;font-size:clamp(10px,1.2vw,13px);max-height:260px;overflow:auto;flex:1}
+    .spec-log p{padding-bottom:4px;border-bottom:1px dashed #e2cda8;margin:2px 0}
+    .winner-banner{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#22314a99}
+    .winner-card{background:radial-gradient(circle at 50% 16%,#fffde4,#ffd95a 58%,#ffab32);border:5px solid #75431f;border-radius:28px;padding:32px;text-align:center;box-shadow:0 9px 0 #ba6c25,0 22px 38px #35201466;max-width:500px}
+    .winner-card h2{color:#d64c2e;font-size:clamp(28px,5vw,50px);margin:0}
+    .winner-card p{font-size:clamp(16px,2.5vw,26px);font-weight:700}
+    .no-room{max-width:520px;margin:12vh auto;text-align:center;padding:20px}
+    .token{font-size:clamp(12px,1.5vw,18px);display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:2px solid white;box-shadow:0 2px 0 #593728}
+    @media(max-width:780px){.spec-wrap{grid-template-columns:1fr}.spec-side{display:none}}
+    .land-owner{font-size:.72em;display:block;opacity:.9}
+  </style>
+</head>
+<body>
+<div id="spec-root"></div>
+<script>
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const root=document.querySelector('#spec-root');
+const params=new URLSearchParams(location.search);
+let roomId=params.get('id')||'';
+let room=null;
+
+if(!roomId){
+  root.innerHTML=`<div class="no-room"><h1>달란트마블 관전 화면</h1><p>URL에 방 코드를 입력해 주세요.</p><div style="display:flex;gap:8px;justify-content:center;margin-top:16px"><input id="rc" maxlength="6" placeholder="방 코드" style="padding:10px;border:3px solid #e6b85a;border-radius:14px;font-size:18px;font-family:inherit"><button onclick="go()">관전 시작</button></div></div>`;
+} else { load(); }
+
+window.go=function(){roomId=document.querySelector('#rc').value.trim().toUpperCase();if(roomId){history.replaceState(null,'','?id='+roomId);load();}};
+
+function owner(idx){return room.players.find(p=>p.lands.some(l=>l.idx===idx));}
+function boardHtml(){
+  const slots=Array(64).fill('');
+  const indexes=[];
+  for(let i=0;i<8;i++)indexes.push(i);
+  for(let i=1;i<8;i++)indexes.push(i*8+7);
+  for(let i=6;i>=0;i--)indexes.push(56+i);
+  for(let i=6;i>0;i--)indexes.push(i*8);
+  room.board.forEach((s,i)=>{
+    const o=owner(i), people=room.players.filter(p=>p.position===i);
+    slots[indexes[i]]=`<div class="space ${s[1]}" style="--c:${o?.color||'#8ac'}">
+      <b>${esc(s[0])}</b>
+      ${s[1]==='chance'?'<span class="space-icon key-icon">🗝️</span>':''}
+      <small>${s[2]?s[2]+' 달란트':esc(s[3])}</small>
+      ${o?`<small class="land-owner" style="color:${o.color}">${o.avatar||'★'} ${'🏠'.repeat(o.lands.find(l=>l.idx===i)?.buildings||0)}</small>`:''}
+      <div>${people.map(p=>`<i class="token" style="background:${p.color}">${p.avatar||''}</i>`).join('')}</div>
+    </div>`;
+  });
+  const heroClass=sessionStorage.getItem('specHeroes')?'':' hero-enter';
+  sessionStorage.setItem('specHeroes','1');
+  const town=`<div class="center-scene"><span class="cloud c1">☁️</span><span class="cloud c2">☁️</span><span class="star s1">✦</span><span class="star s2">✦</span><div class="town-sign"><small>말씀을 따라 떠나는</small><strong>달란트 타운</strong><em>♟ 함께 즐기는 믿음의 보드게임 ♟</em></div><div class="hills">⛰️ <span>🌳</span> <span>⛪</span> <span>🌳</span> ⛰️</div><div class="mascots"><img class="${heroClass}" src="/assets/bible-heroes.png" alt="달란트 타운 탐험대"></div></div>`;
+  return town+slots.map(x=>x||'<div class="space"></div>').join('');
+}
+
+function render(){
+  if(!room){root.innerHTML='<div class="no-room"><p>방을 불러오는 중...</p></div>';return;}
+  const cur=room.players[room.turn%room.players.length];
+  const seconds=room.endsAt?Math.max(0,Math.ceil((room.endsAt-room.serverTime)/1000)):room.duration*60;
+  const mm=String(Math.floor(seconds/60)).padStart(2,'0'), ss=String(seconds%60).padStart(2,'0');
+  const maxMoney=Math.max(...room.players.map(p=>p.money+p.lands.length*20),1);
+  const byWorth=[...room.players].sort((a,b)=>(b.money+b.lands.length*20)-(a.money+a.lands.length*20));
+
+  const winnerBanner=room.finished?`<div class="winner-banner"><div class="winner-card"><span style="font-size:64px">🏆</span><h2>달란트마블 시상식</h2><p>👑 달란트 왕: <b>${esc(byWorth[0]?.name||'')}</b></p><p>📖 말씀 박사상: <b>${esc([...room.players].sort((a,b)=>(b.quizWins||0)-(a.quizWins||0))[0]?.name||'모두')}</b></p><p>⭐ 공동 별: ${room.sharedStars||0}개 / 목표 ${room.sharedGoal||12}개</p></div></div>`:'';
+
+  root.innerHTML=`${winnerBanner}<div class="spec-wrap">
+    <div class="spec-header" style="grid-column:1/-1">
+      <h1>🎲 달란트마블</h1>
+      <div class="spec-hud">
+        <span id="spec-timer">⏱ ${mm}:${ss}</span>
+        <span id="spec-stars">⭐ ${room.sharedStars||0} / ${room.sharedGoal||12}</span>
+        <span class="room" style="font-size:clamp(14px,2vw,20px)">방 코드: ${room.id}</span>
+      </div>
+    </div>
+    <div class="spec-board-wrap">
+      <div class="spec-board">${boardHtml()}</div>
+    </div>
+    <div class="spec-side">
+      ${room.started?`<div class="cur-turn">🎯 현재 차례: <b>${esc(cur?.name||'')} 팀</b></div>`:'<div class="cur-turn">⏳ 게임 시작 전</div>'}
+      <div class="score-card">
+        <h2>🏅 순위판</h2>
+        ${byWorth.map((p,i)=>{
+          const worth=p.money+p.lands.length*20;
+          return `<div class="score-row">
+            <span style="font-weight:800;min-width:22px;color:#8a4b12">${i+1}</span>
+            <span class="score-av">${p.avatar||'🦁'}</span>
+            <span style="flex:1;font-weight:700">${esc(p.name)}</span>
+            <div class="score-bar-wrap"><div class="score-bar" style="width:${Math.round(worth/maxMoney*100)}%;background:${p.color}"></div></div>
+            <span class="score-num" style="color:${p.color}">${worth}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="score-card" style="font-family:system-ui,'Malgun Gothic',sans-serif;font-size:clamp(11px,1.3vw,14px)">
+        <h2 style="font-family:'Jua','Malgun Gothic',sans-serif">🗺️ 현황</h2>
+        ${room.players.map(p=>`<div style="margin-bottom:6px;padding-bottom:6px;border-bottom:1px dashed #e2cda8">
+          <b style="color:${p.color}">${p.avatar||'🦁'} ${esc(p.name)}</b> · ${p.money}달란트 · 땅 ${p.lands.length}개 · 건물 ${p.lands.reduce((a,l)=>a+l.buildings,0)}개${p.items?.length?` · 🎒${p.items.length}`:''}</div>`).join('')}
+      </div>
+      <div class="spec-log"><b>게임 소식</b>${room.log.map(x=>`<p>${esc(x.message)}</p>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+async function load(){
+  if(!roomId)return;
+  try{
+    const r=await fetch('/api/room?id='+encodeURIComponent(roomId));
+    if(!r.ok){root.innerHTML='<div class="no-room"><p>방을 찾을 수 없습니다. 방 코드를 확인해 주세요.</p></div>';return;}
+    room=await r.json();
+    render();
+  }catch(e){console.error(e);}
+}
+setInterval(load,2000);
+</script>
+</body>
+</html>
