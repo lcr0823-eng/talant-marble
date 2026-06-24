@@ -18,8 +18,9 @@ body{
     radial-gradient(circle at 85% 18%,#c7f0f0 0 8%,transparent 9%),
     linear-gradient(135deg,#f7eecf,#d9f3ed);
   color:var(--ink);font-family:'Jua','Malgun Gothic',sans-serif;
-  /* iOS safe area */
+  /* iOS safe area + 스크롤 */
   padding-bottom:env(safe-area-inset-bottom);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
 }
 button,input,select{font:inherit}
 
@@ -58,8 +59,9 @@ input{
 .welcome{
   max-width:520px;margin:0 auto;
   padding:clamp(16px,4vw,28px) clamp(14px,4vw,28px);
+  padding-bottom:max(24px,env(safe-area-inset-bottom,24px));
   text-align:center;
-  min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+  min-height:100vh;display:flex;flex-direction:column;justify-content:flex-start;
 }
 .logo{
   font-size:clamp(36px,9vw,70px);margin:0 0 4px;
