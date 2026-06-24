@@ -87,7 +87,7 @@ function log(room, message) { room.log.unshift({ message, time: new Date().toLoc
 function newRoom(hostName, mode='online', count=1, avatar='🦁', startMoney=60) {
   const sm = Math.max(20, Math.min(200, Number(startMoney)||60));
   const room = { id: code(), started:false, finished:false, hostId:crypto.randomUUID(), players:[], turn:0, log:[], winner:null, mode, tabletop:mode==='tabletop', duration:25, endsAt:null, sharedStars:0, sharedGoal:12 };
-  room.players.push({ id:room.hostId, name:hostName || '방장', avatar, money:sm, position:0, lands:[], items:[], desertTurns:0, color:'#ee6c4d', quizWins:0, miniWins:0, sharing:0 });
+  room.players.push({ id:room.hostId, name:hostName || '방장', avatar, avatarSrc:'', money:sm, position:0, lands:[], items:[], desertTurns:0, color:'#ee6c4d', quizWins:0, miniWins:0, sharing:0 });
   const extra = mode==='solo' ? 3 : mode==='tabletop' ? Math.max(1, Math.min(4, Number(count)||3)-1) : 0;
   const colors=['#3d5a80','#2a9d8f','#e9c46a','#9b5de5'];
   const avatars=['🐻','🦊','🐼','🐯'];
@@ -178,9 +178,9 @@ const server=http.createServer((req,res)=>{
   const url=new URL(req.url, `http://${req.headers.host}`);
   if(req.method==='GET' && url.pathname==='/api/room') { const r=rooms.get(url.searchParams.get('id')); return r?send(res,200,roomData(r)):send(res,404,{error:'방을 찾을 수 없습니다.'}); }
   if(req.method==='POST' && url.pathname.startsWith('/api/')) { let raw=''; req.on('data',d=>raw+=d); req.on('end',()=>{ try { const body=raw?JSON.parse(raw):{};
-    if(url.pathname==='/api/create'){ const r=newRoom(body.name, body.mode, body.count, body.avatar, body.startMoney); if(body.duration) r.duration=Math.max(5,Math.min(60,Number(body.duration))); return send(res,200,{room:roomData(r),playerId:r.hostId}); }
+    if(url.pathname==='/api/create'){ const r=newRoom(body.name, body.mode, body.count, body.avatar, body.startMoney); if(body.duration) r.duration=Math.max(5,Math.min(60,Number(body.duration))); if(body.avatarSrc) r.players[0].avatarSrc=body.avatarSrc; return send(res,200,{room:roomData(r),playerId:r.hostId}); }
     const r=rooms.get(body.roomId); if(!r) return send(res,404,{error:'방을 찾을 수 없습니다.'});
-    if(url.pathname==='/api/join'){ if(r.started) throw Error('이미 시작된 게임입니다.'); if(r.players.length>=6) throw Error('방이 가득 찼습니다.'); const avatarList=['🦁','🐻','🦊','🐼','🐯','🐨']; const p={id:crypto.randomUUID(),name:(body.name||'참여자').slice(0,12),avatar:body.avatar||avatarList[r.players.length]||'🐨',money:r.players[0]?.money||60,position:0,lands:[],items:[],desertTurns:0,color:['#3d5a80','#2a9d8f','#e9c46a','#9b5de5','#e76f51'][r.players.length-1],quizWins:0}; r.players.push(p); log(r,`${p.name} 팀이 참여했습니다.`); return send(res,200,{room:roomData(r),playerId:p.id}); }
+    if(url.pathname==='/api/join'){ if(r.started) throw Error('이미 시작된 게임입니다.'); if(r.players.length>=6) throw Error('방이 가득 찼습니다.'); const p={id:crypto.randomUUID(),name:(body.name||'참여자').slice(0,12),avatar:body.avatar||'david',avatarSrc:body.avatarSrc||'',money:r.players[0]?.money||60,position:0,lands:[],items:[],desertTurns:0,color:['#3d5a80','#2a9d8f','#e9c46a','#9b5de5','#e76f51'][r.players.length-1],quizWins:0}; r.players.push(p); log(r,`${p.name} 팀이 참여했습니다.`); return send(res,200,{room:roomData(r),playerId:p.id}); }
     if(url.pathname==='/api/start'){ if(body.playerId!==r.hostId) throw Error('방장만 시작할 수 있습니다.'); if(r.mode==='online' && r.players.length<2) throw Error('두 팀 이상 참여해야 합니다.'); r.started=true; r.endsAt=Date.now()+r.duration*60000; log(r,'게임을 시작합니다!'); return send(res,200,roomData(r)); }
     if(url.pathname==='/api/finish'){ if(body.playerId!==r.hostId) throw Error('방장만 종료할 수 있습니다.'); r.finished=true; r.winner=[...r.players].sort((a,b)=>(b.money+b.lands.length*20)-(a.money+a.lands.length*20))[0]?.id; log(r,'게임을 마치고 시상식을 시작합니다.'); return send(res,200,roomData(r)); }
     if(url.pathname==='/api/action'){ const p=r.tabletop && body.playerId===r.hostId ? active(r) : getPlayer(r,body.playerId); if(!p) throw Error('참여자를 찾을 수 없습니다.'); action(r,p,body.type,body); return send(res,200,roomData(r)); }

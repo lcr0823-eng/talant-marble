@@ -1,5 +1,7 @@
-const CACHE = 'talant-marble-v1';
-const ASSETS = ['/', '/index.html', '/app.js', '/animate.js', '/sound.js', '/effects.js', '/effects.css', '/modes.js', '/gameplus.js', '/music-player.js', '/style.css', '/manifest.json', '/icon.svg'];
+const CACHE = 'talant-marble-v3';
+const ASSETS = ['/', '/index.html', '/app.js', '/animate.js', '/sound.js', '/effects.js', '/effects.css', '/modes.js', '/gameplus.js', '/music-player.js', '/style.css', '/manifest.json', '/icon.svg',
+  '/avatars/david.svg','/avatars/moses.svg','/avatars/jesus.svg','/avatars/mary.svg',
+  '/avatars/noah.svg','/avatars/joseph.svg','/avatars/esther.svg','/avatars/jonah.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
