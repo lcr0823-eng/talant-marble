@@ -110,9 +110,9 @@ input{
 .board{
   aspect-ratio:1/1;
   display:grid;
-  grid-template-columns:repeat(8,1fr);
-  grid-template-rows:repeat(8,1fr);
-  gap:3px;padding:8px;
+  grid-template-columns:repeat(10,1fr);
+  grid-template-rows:repeat(10,1fr);
+  gap:2px;padding:6px;
   background:linear-gradient(135deg,#965426,#6c3517);
   border:5px solid #fff0b9;border-radius:25px;
   box-shadow:0 7px 0 #54260f,0 16px 30px #4a2c1960;
@@ -124,8 +124,8 @@ input{
 ══════════════════════════════════════ */
 .space{
   background:linear-gradient(145deg,#fffef8,#f9efd9);
-  padding:4px;border-radius:9px;
-  font-size:clamp(8px,1.1vw,14px);
+  padding:3px;border-radius:7px;
+  font-size:clamp(7px,0.85vw,12px);
   position:relative;overflow:hidden;
   border:2px solid #f8cf78;
   box-shadow:inset 2px 2px #fff,inset -2px -2px #e8c98d;
@@ -148,6 +148,11 @@ input{
 
 /* 칸 타입 색상 */
 .space.land{background:linear-gradient(145deg,#fffdf4,#f5e7c5)}
+.space.land:before{background:var(--gc,#aaa)}
+.space.jail{background:linear-gradient(145deg,#f0f0f0,#ddd)}
+.space.jail:before{background:#888}
+.space.rest{background:linear-gradient(145deg,#dcf8e8,#aee8c8)}
+.space.rest:before{background:#2ecc71}
 .space.chance{background:linear-gradient(145deg,#fff8bd,#ffe786)}
 .space.chance:before{background:#ffd132}
 .space.quiz{background:linear-gradient(145deg,#dff2ff,#bde3ff)}
@@ -511,7 +516,7 @@ input{
   /* 보드 칸 텍스트 */
   .space{padding:2px}
   .space small{display:none}
-  .space b{font-size:clamp(9px,1.8vw,13px)}
+  .space b{font-size:clamp(7px,1.4vw,11px)}
 
   /* 헤더 */
   .top h1{font-size:22px}
@@ -561,9 +566,9 @@ input{
   .dice-caption{display:none}
 
   /* 보드 칸 */
-  .board{padding:5px;gap:2px;border-width:4px}
-  .space{border-radius:6px;padding:2px 1px}
-  .space b{font-size:clamp(7px,2.2vw,11px);line-height:1}
+  .board{padding:4px;gap:1px;border-width:4px}
+  .space{border-radius:5px;padding:1px}
+  .space b{font-size:clamp(6px,1.8vw,9px);line-height:1}
   .space:before{height:4px}
 
   /* 액션 버튼 세로 쌓기 */
