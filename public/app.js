@@ -121,7 +121,11 @@ function lobbyHtml(mine,cur) {
 
 function render(){
   if(!room)return welcome();
-  const mine=me(), cur=room.players[room.turn%room.players.length], spot=room.board[mine.position], o=owner(mine.position), isMine=cur.id===playerId;
+  const cur=room.players[room.turn%room.players.length];
+  // tabletop 모드: 방장이 모든 플레이어를 대신 조작 → mine = 현재 차례 플레이어
+  const mine = (room.tabletop && playerId===room.hostId) ? cur : me();
+  const isMine = room.tabletop ? playerId===room.hostId : cur.id===playerId;
+  const spot=room.board[mine?.position??0], o=owner(mine?.position??0);
   const isHost=playerId===room.hostId;
   const pauseBtn=room.started&&isHost?`<button class="pause-btn" onclick="togglePause()">${room.paused?'▶️ 재개':'⏸ 일시정지'}</button>`:'';
   const pauseOverlay=room.paused?`<div class="pause-overlay"><div class="pause-card">⏸<br>일시 정지 중<br><small>방장이 재개할 때까지 기다려 주세요</small></div></div>`:'';
