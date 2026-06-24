@@ -166,30 +166,68 @@ input{
 .space.travel{background:linear-gradient(145deg,#edd7ff,#d5b1f6)}
 .space.travel:before{background:#ad74dc}
 
-/* 토큰 */
+/* ══ 토큰 (체스말처럼 서 있는 모양) ══ */
 .token{
   display:inline-flex;align-items:center;justify-content:center;
-  width:24px;height:24px;border-radius:50%;
-  margin:1px;border:2.5px solid white;
-  box-shadow:0 2px 4px #0005,0 3px 0 #593728;
-  font-size:12px;
+  width:22px;height:30px;
+  border-radius:50% 50% 42% 42% / 58% 58% 42% 42%;
+  margin:1px 0;border:2.5px solid white;
+  box-shadow:0 4px 0 rgba(0,0,0,0.45),0 5px 8px rgba(0,0,0,0.28);
+  font-size:11px;
   position:relative;z-index:4;
+  overflow:hidden;
 }
-.token:after{display:none}
+/* 말 그림자 (바닥에 서 있는 느낌) */
+.token-row{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;margin-top:2px;padding-bottom:2px}
 /* 내 토큰 강조 */
 .token.my-token{
   border-color:#ffe04a;
-  box-shadow:0 0 0 2px #ff6b00,0 3px 0 #593728,0 4px 8px #ff6b0055;
+  box-shadow:0 0 0 2px #ff6b00,0 5px 0 rgba(80,0,0,0.55),0 7px 10px #ff6b0044;
   animation:my-token-bounce .9s ease-in-out infinite alternate;
 }
-@keyframes my-token-bounce{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+@keyframes my-token-bounce{from{transform:translateY(0) scale(1)}to{transform:translateY(-4px) scale(1.06)}}
 /* 현재 차례 토큰 강조 */
 .token.active-token{
   border-color:#fff;
-  box-shadow:0 0 0 2px #00c3ff,0 3px 0 #593728;
+  box-shadow:0 0 0 2px #00c3ff,0 5px 0 rgba(0,50,80,0.5),0 6px 10px #00c3ff44;
 }
 /* 토큰 이미지 */
-.token img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+.token img{width:100%;height:100%;border-radius:50% 50% 42% 42% / 58% 58% 42% 42%;object-fit:cover;display:block}
+
+/* ══ 이동 중 토큰 오버레이 (체스말 스타일) ══ */
+.moving-token{
+  position:fixed;z-index:9999;pointer-events:none;
+  width:40px;height:54px;
+  border-radius:50% 50% 38% 38% / 55% 55% 45% 45%;
+  border:3px solid white;
+  box-shadow:0 6px 0 rgba(0,0,0,0.5),0 10px 22px rgba(0,0,0,0.4);
+  overflow:hidden;
+  font-size:20px;
+  display:flex;align-items:flex-start;justify-content:center;
+  transition:opacity 0.25s;
+}
+.moving-token img{width:100%;height:100%;object-fit:cover;border-radius:50% 50% 38% 38% / 55% 55% 45% 45%}
+/* transition 활성화 후 부드럽게 이동 */
+.moving-token.moving-token-active{
+  transition:left 0.32s cubic-bezier(.25,.46,.45,.94),
+             top 0.32s cubic-bezier(.25,.46,.45,.94),
+             opacity 0.25s;
+}
+/* 칸 이동 시 살짝 튀는 효과 */
+@keyframes tok-hop-anim{
+  0%{transform:translateY(0) scale(1)}
+  40%{transform:translateY(-10px) scale(1.08)}
+  100%{transform:translateY(0) scale(1)}
+}
+.moving-token.tok-hop{animation:tok-hop-anim 0.28s ease-out}
+/* 도착 바운스 */
+@keyframes tok-land-anim{
+  0%{transform:scale(1)}
+  35%{transform:scale(1.25) translateY(-6px)}
+  65%{transform:scale(0.9)}
+  100%{transform:scale(1)}
+}
+.moving-token.tok-land{animation:tok-land-anim 0.5s ease-out}
 
 /* 내 위치 칸 하이라이트 */
 .space.my-pos{
@@ -340,6 +378,54 @@ input{
 .die span{width:6px;height:6px;border-radius:50%;background:#5b3151;align-self:center;justify-self:center}
 .die.rolling{animation:roll .62s cubic-bezier(.3,.8,.45,1) infinite}
 .dice-caption{font-size:12px;color:#8c4c25}
+
+/* ══ 주사위 결과 팝업 ══ */
+.dice-popup-overlay{
+  position:fixed;inset:0;z-index:10000;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(20,30,50,0.45);
+  cursor:pointer;
+  transition:opacity 0.35s;
+}
+.dice-popup-card{
+  background:linear-gradient(145deg,#fffdf6,#fff8dc);
+  border:5px solid #78431e;border-radius:28px;
+  padding:28px 36px 22px;text-align:center;
+  box-shadow:0 10px 0 #d39354,0 18px 40px rgba(0,0,0,0.45);
+  animation:dp-pop 0.38s cubic-bezier(.18,.89,.32,1.28);
+  min-width:260px;
+}
+@keyframes dp-pop{
+  from{transform:scale(0.45) rotate(-6deg);opacity:0}
+  to{transform:scale(1) rotate(0deg);opacity:1}
+}
+.dp-label{font-size:18px;color:#8a4b12;margin-bottom:18px;font-weight:800}
+.dp-dice-row{
+  display:flex;align-items:center;justify-content:center;
+  gap:14px;margin-bottom:10px;
+}
+.dp-dice-row .die{
+  width:60px;height:60px;padding:8px;
+  border-radius:14px;box-shadow:3px 6px 0 #70435b;
+  transform:rotate(-6deg);
+}
+.dp-dice-row .die:last-of-type{transform:rotate(5deg)}
+.dp-dice-row .die span{width:9px;height:9px}
+.dp-op{font-size:28px;color:#78431e;font-weight:900;line-height:1}
+.dp-total{
+  font-size:60px;font-weight:900;color:#e85738;
+  line-height:1;text-shadow:0 3px white,0 6px #bf3d2b;
+  min-width:64px;display:inline-block;
+}
+.dp-double{
+  font-size:22px;color:#2a9d3a;font-weight:800;
+  background:linear-gradient(135deg,#dcf8dc,#b0f0b0);
+  border:2px solid #4caf50;border-radius:14px;
+  padding:6px 16px;margin:6px 0;
+  animation:dp-double-pulse .6s ease-in-out infinite alternate;
+}
+@keyframes dp-double-pulse{from{transform:scale(1)}to{transform:scale(1.05)}}
+.dp-hint{font-size:11px;color:#b09060;margin-top:12px;font-family:system-ui,'Malgun Gothic',sans-serif}
 
 /* 모달 */
 .modal{

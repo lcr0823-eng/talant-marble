@@ -185,14 +185,36 @@ async function doAction(type,more={}){
     }
     room=await api('/api/action',{roomId,playerId,type,...more});
     didBuy=(type==='buy');
-    if(type==='roll'&&snapMe&&me()&&snapMe.position!==me().position){
-      rolling=false;render();
-      await window.animateMove?.(snapMe.position,me().position,me().color,me().avatarSrc||me().avatar);
+    if(type==='roll'){
+      rolling=false;
+      // 주사위 결과 팝업 (가운데 크게 표시)
+      const cur=room.players[room.turn%room.players.length];
+      const rollPlayer=(room.tabletop&&playerId===room.hostId)?cur:me();
+      if(rollPlayer?.lastRoll){showDicePopup(rollPlayer.lastRoll[0],rollPlayer.lastRoll[1]);}
+      if(snapMe&&me()&&snapMe.position!==me().position){
+        render();
+        await window.animateMove?.(snapMe.position,me().position,me().color,me().avatarSrc,me().avatar);
+      }
     }
   }catch(e){alert(e.message);}
   finally{rolling=false;busy=false;render();}
   // 성경 구절 카드: 땅 구입 후 자동 표시 (8번)
   if(didBuy&&me()){setTimeout(()=>window.showSpaceInfo?.(me().position),350);}
+}
+/* ── 주사위 결과 팝업 ── */
+function showDicePopup(d1,d2){
+  const total=d1+d2; const isDouble=d1===d2;
+  const el=document.createElement('div');
+  el.className='dice-popup-overlay';
+  el.innerHTML=`<div class="dice-popup-card">
+    <div class="dp-label">🎲 주사위 결과</div>
+    <div class="dp-dice-row">${die(d1)}<span class="dp-op">+</span>${die(d2)}<span class="dp-op">=</span><span class="dp-total">${total}</span></div>
+    ${isDouble?'<div class="dp-double">🎉 더블! 한 번 더!</div>':''}
+    <div class="dp-hint">탭하면 닫힘</div>
+  </div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click',()=>el.remove());
+  setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),350);},2800);
 }
 /* ── 카운트다운 ── */
 async function showCountdown(){
