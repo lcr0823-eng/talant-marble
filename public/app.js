@@ -14,29 +14,36 @@ function welcome(){
   const params=new URLSearchParams(location.search);
   const prefillCode=params.get('join')||'';
   app.innerHTML=`<section class="welcome">
-    <h1 class="logo">달란트마블</h1>
-    <p>말씀을 기억하고 함께 즐기는 실시간 보드게임<br>휴대폰·태블릿·PC에서 같은 방으로 참여하세요.</p>
+    <h1 class="logo">🎲 달란트마블</h1>
+    <p>말씀을 기억하고 함께 즐기는 실시간 보드게임</p>
     <div class="card">
       <div class="form-block">
-        <label class="form-label">팀 이름 또는 내 이름</label>
-        <input id="name" maxlength="12" placeholder="예) 믿음팀, 소망팀">
-        <label class="form-label">아바타 선택</label>
+        <label class="form-label">👤 팀 이름 또는 내 이름</label>
+        <input id="name" maxlength="12" placeholder="예) 믿음팀, 소망팀" autocomplete="off">
+        <label class="form-label">🐾 아바타 선택</label>
         ${avatarPicker()}
       </div>
       <div class="form-block create-block">
-        <label class="form-label">게임 시간 (분)</label>
-        <input id="duration" type="number" min="5" max="60" value="25" style="width:80px">
-        <label class="form-label">시작 달란트</label>
-        <input id="startMoney" type="number" min="20" max="200" value="60" style="width:80px">
-        <button onclick="createRoom()">새 게임 만들기</button>
+        <div class="row">
+          <label class="form-label">⏱ 게임 시간</label>
+          <input id="duration" type="number" min="5" max="60" value="25" inputmode="numeric">
+          <span style="font-size:13px;color:#8a4b12">분</span>
+        </div>
+        <div class="row">
+          <label class="form-label">💰 시작 달란트</label>
+          <input id="startMoney" type="number" min="20" max="200" value="60" inputmode="numeric">
+          <span style="font-size:13px;color:#8a4b12">달란트</span>
+        </div>
+        <button onclick="createRoom()" style="margin-top:4px;width:100%;font-size:18px;min-height:56px">🎮 새 게임 만들기</button>
       </div>
-      <hr>
-      <div class="form-block">
-        <label class="form-label">방 코드 6자리</label>
-        <div class="form"><input id="code" maxlength="6" placeholder="방 코드 6자리" value="${esc(prefillCode)}"><button onclick="joinRoom()">게임 참여</button></div>
+      <hr style="border:none;border-top:2px dashed #e3b65b;margin:6px 0">
+      <div class="form-block" style="gap:8px">
+        <label class="form-label">🔑 방 코드로 참여하기</label>
+        <input id="code" maxlength="6" placeholder="방 코드 6자리" value="${esc(prefillCode)}" autocomplete="off" style="text-transform:uppercase;letter-spacing:.15em;font-size:20px;text-align:center">
+        <button onclick="joinRoom()" style="width:100%;background:linear-gradient(#6ac76a,#3fae3f);border-color:#2a7a2a;min-height:52px">✅ 게임 참여</button>
       </div>
     </div>
-    <p class="muted">교사는 새 게임을 만든 뒤 방 코드를 참여자에게 알려 주세요.</p>
+    <p class="muted" style="font-size:12px">교사는 새 게임을 만든 뒤 방 코드를 참여자에게 알려 주세요.</p>
   </section>`;
   if(prefillCode) document.querySelector('#code').focus();
 }
