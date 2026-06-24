@@ -209,6 +209,24 @@
       o.connect(gn); gn.connect(g); o.start(c.currentTime); o.stop(c.currentTime+0.15);
     }); },
 
+    // 내 차례 알림음 (밝고 경쾌한 3음)
+    myTurn() { sfx((c,g) => {
+      [523,784,1047].forEach((f,i) => {
+        const o=c.createOscillator(), gn=c.createGain();
+        o.type='triangle'; o.frequency.value=f;
+        gn.gain.setValueAtTime(0.7,c.currentTime+i*0.13); gn.gain.exponentialRampToValueAtTime(0.001,c.currentTime+i*0.13+0.28);
+        o.connect(gn); gn.connect(g); o.start(c.currentTime+i*0.13); o.stop(c.currentTime+i*0.13+0.3);
+      });
+    }); },
+
+    // 카운트다운 틱
+    countTick() { sfx((c,g) => {
+      const o=c.createOscillator(), gn=c.createGain();
+      o.type='sine'; o.frequency.value=880;
+      gn.gain.setValueAtTime(0.5,c.currentTime); gn.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.12);
+      o.connect(gn); gn.connect(g); o.start(c.currentTime); o.stop(c.currentTime+0.13);
+    }); },
+
     startBg, stopBg,
     toggleMusic() {
       musicOn = !musicOn;

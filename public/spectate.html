@@ -53,6 +53,14 @@ if(!roomId){
 
 window.go=function(){roomId=document.querySelector('#rc').value.trim().toUpperCase();if(roomId){history.replaceState(null,'','?id='+roomId);load();}};
 
+window.adjustScore=async function(playerId,amount){
+  if(!roomId)return;
+  try{
+    const r=await fetch('/api/adjustScore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roomId,playerId,amount})});
+    if(r.ok){room=await r.json();render();}
+  }catch(e){console.error(e);}
+};
+
 function owner(idx){return room.players.find(p=>p.lands.some(l=>l.idx===idx));}
 function boardHtml(){
   const slots=Array(64).fill('');
@@ -107,12 +115,15 @@ function render(){
           const worth=p.money+p.lands.length*20;
           return `<div class="score-row">
             <span style="font-weight:800;min-width:22px;color:#8a4b12">${i+1}</span>
-            <span class="score-av">${p.avatar||'🦁'}</span>
+            ${p.avatarSrc?`<img src="${p.avatarSrc}" style="width:28px;height:28px;border-radius:50%;border:2px solid white;flex-shrink:0">`:`<span class="score-av">${p.avatar||'🦁'}</span>`}
             <span style="flex:1;font-weight:700">${esc(p.name)}</span>
             <div class="score-bar-wrap"><div class="score-bar" style="width:${Math.round(worth/maxMoney*100)}%;background:${p.color}"></div></div>
-            <span class="score-num" style="color:${p.color}">${worth}</span>
+            <span class="score-num" style="color:${p.color}">${p.money}달란트</span>
+            <button class="adj-btn adj-plus" onclick="adjustScore('${p.id}',10)" title="+10">+</button>
+            <button class="adj-btn adj-minus" onclick="adjustScore('${p.id}',-10)" title="-10">−</button>
           </div>`;
         }).join('')}
+        <p style="font-family:system-ui,'Malgun Gothic',sans-serif;font-size:11px;color:#a07840;margin:8px 0 0;text-align:center">교사 조정: ±10달란트</p>
       </div>
       <div class="score-card" style="font-family:system-ui,'Malgun Gothic',sans-serif;font-size:clamp(11px,1.3vw,14px)">
         <h2 style="font-family:'Jua','Malgun Gothic',sans-serif">🗺️ 현황</h2>

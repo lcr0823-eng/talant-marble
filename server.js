@@ -86,7 +86,7 @@ function active(room) { return room.players[room.turn % room.players.length]; }
 function log(room, message) { room.log.unshift({ message, time: new Date().toLocaleTimeString('ko-KR') }); room.log = room.log.slice(0, 20); }
 function newRoom(hostName, mode='online', count=1, avatar='🦁', startMoney=60) {
   const sm = Math.max(20, Math.min(200, Number(startMoney)||60));
-  const room = { id: code(), started:false, finished:false, hostId:crypto.randomUUID(), players:[], turn:0, log:[], winner:null, mode, tabletop:mode==='tabletop', duration:25, endsAt:null, sharedStars:0, sharedGoal:12 };
+  const room = { id: code(), started:false, finished:false, paused:false, hostId:crypto.randomUUID(), players:[], turn:0, log:[], winner:null, mode, tabletop:mode==='tabletop', duration:25, endsAt:null, sharedStars:0, sharedGoal:12 };
   room.players.push({ id:room.hostId, name:hostName || '방장', avatar, avatarSrc:'', money:sm, position:0, lands:[], items:[], desertTurns:0, color:'#ee6c4d', quizWins:0, miniWins:0, sharing:0 });
   const extra = mode==='solo' ? 3 : mode==='tabletop' ? Math.max(1, Math.min(4, Number(count)||3)-1) : 0;
   const colors=['#3d5a80','#2a9d8f','#e9c46a','#9b5de5'];
@@ -111,6 +111,7 @@ function takeBotTurns(room) {
 }
 function action(room, player, type, body) {
   if (!room.started || room.winner || room.finished) throw Error('진행 중인 게임이 아닙니다.');
+  if (room.paused && type !== 'end') throw Error('게임이 일시 정지 중입니다.');
   if (active(room).id !== player.id) throw Error('아직 내 차례가 아닙니다.');
   if (type === 'roll') {
     if (player.desertTurns > 0) { player.desertTurns--; log(room, `${player.name} 팀은 광야에서 머뭅니다.`); nextTurn(room); return; }
@@ -140,6 +141,7 @@ function action(room, player, type, body) {
   else if (type === 'answer') {
     if(!player.question) throw Error('현재 풀 퀴즈가 없습니다.');
     const ok=(body.answer||'').trim().replaceAll(' ','').includes(player.question[1].replaceAll(' ',''));
+    player.quizResult={correct:ok, answer:player.question[1], question:player.question[0], t:Date.now()};
     if(ok){ player.money+=10; player.quizWins=(player.quizWins||0)+1; room.sharedStars=(room.sharedStars||0)+1; log(room, `${player.name} 팀 정답! 10달란트를 받고 ⭐공동 별을 획득했습니다.`); }
     else log(room, `${player.name} 팀 아쉽지만 다음 기회에! 정답: ${player.question[1]}`);
     player.question=null;
@@ -183,6 +185,8 @@ const server=http.createServer((req,res)=>{
     if(url.pathname==='/api/join'){ if(r.started) throw Error('이미 시작된 게임입니다.'); if(r.players.length>=6) throw Error('방이 가득 찼습니다.'); const p={id:crypto.randomUUID(),name:(body.name||'참여자').slice(0,12),avatar:body.avatar||'david',avatarSrc:body.avatarSrc||'',money:r.players[0]?.money||60,position:0,lands:[],items:[],desertTurns:0,color:['#3d5a80','#2a9d8f','#e9c46a','#9b5de5','#e76f51'][r.players.length-1],quizWins:0}; r.players.push(p); log(r,`${p.name} 팀이 참여했습니다.`); return send(res,200,{room:roomData(r),playerId:p.id}); }
     if(url.pathname==='/api/start'){ if(body.playerId!==r.hostId) throw Error('방장만 시작할 수 있습니다.'); if(r.mode==='online' && r.players.length<2) throw Error('두 팀 이상 참여해야 합니다.'); r.started=true; r.endsAt=Date.now()+r.duration*60000; log(r,'게임을 시작합니다!'); return send(res,200,roomData(r)); }
     if(url.pathname==='/api/finish'){ if(body.playerId!==r.hostId) throw Error('방장만 종료할 수 있습니다.'); r.finished=true; r.winner=[...r.players].sort((a,b)=>(b.money+b.lands.length*20)-(a.money+a.lands.length*20))[0]?.id; log(r,'게임을 마치고 시상식을 시작합니다.'); return send(res,200,roomData(r)); }
+    if(url.pathname==='/api/pause'){ if(body.playerId!==r.hostId) throw Error('방장만 가능합니다.'); r.paused=!r.paused; log(r, r.paused?'⏸ 게임이 일시 정지됐습니다.':'▶️ 게임이 재개됐습니다.'); return send(res,200,roomData(r)); }
+    if(url.pathname==='/api/adjustScore'){ const tp=r.players.find(p=>p.id===body.playerId); if(!tp) throw Error('플레이어를 찾을 수 없습니다.'); const amt=Math.max(-tp.money, Math.min(200, Number(body.amount)||0)); tp.money=Math.max(0,tp.money+amt); log(r,`교사가 ${tp.name} 팀의 달란트를 ${amt>=0?'+':''}${amt} 조정했습니다.`); return send(res,200,roomData(r)); }
     if(url.pathname==='/api/action'){ const p=r.tabletop && body.playerId===r.hostId ? active(r) : getPlayer(r,body.playerId); if(!p) throw Error('참여자를 찾을 수 없습니다.'); action(r,p,body.type,body); return send(res,200,roomData(r)); }
     return send(res,404,{error:'요청을 찾을 수 없습니다.'});
   } catch(e){ send(res,400,{error:e.message}); }}); return; }

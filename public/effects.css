@@ -29,3 +29,61 @@
 #game-hud{display:flex;gap:8px;align-items:center;background:#253c5b;color:#fff8d5;border:3px solid #fff2a9;border-radius:14px;padding:7px 10px;box-shadow:0 4px #17304a;font-size:14px}#game-hud span{font-size:12px}.item-chip{display:inline-block;margin:6px 4px 4px 0;padding:5px 7px;background:#dff5ff;border:2px solid #73aed3;border-radius:10px;font-size:12px}.item-chip+small{display:block}.side #item-panel button{font-size:12px;padding:7px 8px;margin:7px 3px 0 0}
 .dice-throw{position:fixed;inset:0;z-index:30;pointer-events:none;display:grid;place-items:center;perspective:1000px;overflow:hidden}.throw-shadow{position:absolute;top:57%;width:280px;height:45px;border-radius:50%;background:#40211655;filter:blur(10px);animation:shadow-grow .9s ease-out both}.big-die{position:absolute;width:clamp(100px,19vw,200px);height:clamp(100px,19vw,200px);padding:16px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);border:5px solid #6b3156;border-radius:25px;background:linear-gradient(145deg,#fffdf5 0%,#e8d1d9 100%);box-shadow:inset 8px 8px 0 #fff,inset -9px -9px 0 #b88596,0 18px 0 #603042,0 32px 42px #2a142d77;transform-style:preserve-3d}.big-die b{width:18%;aspect-ratio:1;border-radius:50%;background:#663052;justify-self:center;align-self:center;box-shadow:inset 2px 2px #8c5276}.big-die.one{margin-left:-18%;animation:dice-one .9s cubic-bezier(.17,.76,.3,1) both}.big-die.two{margin-left:19%;animation:dice-two .9s cubic-bezier(.17,.76,.3,1) both}.dice-throw strong{position:absolute;top:18%;font-size:clamp(22px,4vw,46px);color:#fffbe2;text-shadow:0 4px #9a4d2c,0 8px 16px #43201b;animation:throw-caption .9s ease-out both}@keyframes dice-one{0%{opacity:0;transform:translate3d(-45vw,33vh,-600px) rotate(-130deg)}55%{opacity:1;transform:translate3d(-3vw,-2vh,80px) rotate(260deg)}100%{opacity:0;transform:translate3d(-13vw,3vh,240px) rotate(510deg)}}@keyframes dice-two{0%{opacity:0;transform:translate3d(48vw,35vh,-600px) rotate(150deg)}55%{opacity:1;transform:translate3d(4vw,1vh,110px) rotate(-280deg)}100%{opacity:0;transform:translate3d(15vw,4vh,260px) rotate(-520deg)}}@keyframes shadow-grow{0%{transform:scale(.2);opacity:0}55%{transform:scale(1.2);opacity:.9}100%{transform:scale(.7);opacity:0}}@keyframes throw-caption{0%{opacity:0;transform:scale(.4) translateY(20px)}30%,65%{opacity:1;transform:scale(1.1) translateY(0)}100%{opacity:0;transform:scale(.9) translateY(-15px)}}
 .game-pop{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:22px;background:rgba(24,42,63,.38);animation:veil-in .18s ease-out}.game-pop-card{position:relative;max-width:390px;width:min(90vw,390px);padding:25px 22px 20px;text-align:center;border:5px solid #75431f;border-radius:28px;background:linear-gradient(145deg,#fffdf5,#ffe39a);box-shadow:0 9px 0 #ba6c25,0 22px 38px #35201466;animation:card-spring .38s cubic-bezier(.17,.67,.36,1.4) both}.game-pop-card.gold{background:radial-gradient(circle at 50% 16%,#fffde4,#ffd95a 58%,#ffab32)}.game-pop-icon{display:block;font-size:74px;line-height:1;filter:drop-shadow(0 5px 0 rgba(132,72,25,.25));animation:icon-wiggle .65s ease-in-out infinite alternate}.game-pop h2{margin:10px 0 6px;color:#d64c2e;font-size:30px;text-shadow:0 2px #fff}.game-pop p{font-family:system-ui,'Malgun Gothic',sans-serif;font-weight:700;line-height:1.55;margin:0 0 16px}.spark{position:absolute;color:#fff9b2;font-size:32px;text-shadow:0 2px #db8a26;animation:spark 1s ease-in-out infinite}.spark.a{left:8%;top:8%}.spark.b{right:8%;top:14%;animation-delay:.3s}.spark.c{bottom:12%;left:11%;animation-delay:.6s}@keyframes hero-pop{from{transform:translateY(20px) scale(.55);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}@keyframes hero-bob{to{transform:translateY(-7px)}}@keyframes veil-in{from{opacity:0}to{opacity:1}}@keyframes card-spring{from{opacity:0;transform:scale(.4) rotate(-8deg)}to{opacity:1;transform:scale(1) rotate(0)}}@keyframes icon-wiggle{to{transform:rotate(11deg) scale(1.08)}}@keyframes spark{50%{transform:scale(1.55) rotate(20deg);opacity:.65}}
+
+/* ── 카운트다운 오버레이 ── */
+.countdown-overlay{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:#00000066;pointer-events:none}
+.countdown-num{font-family:'Jua','Malgun Gothic',sans-serif;font-size:clamp(120px,25vw,220px);color:white;text-shadow:0 8px 0 #9b401f,0 16px 30px #00000055;animation:cd-pop .45s cubic-bezier(.17,.67,.36,1.5) both}
+.dice-go{font-size:clamp(80px,18vw,160px);animation:cd-pop .3s cubic-bezier(.17,.67,.36,1.5) both}
+@keyframes cd-pop{from{transform:scale(0.3) rotate(-15deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+
+/* ── 내 차례 토스트 알림 ── */
+.turn-toast{position:fixed;top:clamp(16px,5vh,60px);left:50%;transform:translateX(-50%);z-index:90;background:linear-gradient(135deg,#ff9872,#f35b40);color:white;font-family:'Jua','Malgun Gothic',sans-serif;font-size:clamp(18px,4vw,28px);padding:14px 28px;border-radius:20px;border:3px solid #9b401f;border-bottom-width:6px;box-shadow:0 6px 0 #ffc36e,0 12px 24px #7b3c2855;white-space:nowrap;animation:toast-in .35s cubic-bezier(.17,.67,.36,1.4) both;pointer-events:none}
+.toast-hide{animation:toast-out .4s ease-in forwards}
+@keyframes toast-in{from{transform:translateX(-50%) translateY(-80px) scale(.7);opacity:0}to{transform:translateX(-50%) translateY(0) scale(1);opacity:1}}
+@keyframes toast-out{to{transform:translateX(-50%) translateY(-80px) scale(.7);opacity:0}}
+
+/* ── 일시정지 ── */
+.pause-overlay{position:fixed;inset:0;z-index:40;background:#22314a88;display:grid;place-items:center;pointer-events:none}
+.pause-card{background:linear-gradient(145deg,#fffdf5,#ffe39a);border:5px solid #75431f;border-radius:28px;padding:32px 40px;text-align:center;font-family:'Jua','Malgun Gothic',sans-serif;font-size:clamp(28px,5vw,48px);color:#e85637;box-shadow:0 8px 0 #ba6c25,0 20px 40px #35201466;animation:pop .25s ease-out}
+.pause-card small{display:block;font-size:clamp(13px,2.5vw,18px);color:#75431f;margin-top:8px}
+.pause-btn{font-size:14px;padding:8px 12px;min-height:40px;background:linear-gradient(#6699cc,#4466aa);border-color:#224488;border-bottom-width:4px;box-shadow:0 3px 0 #7799dd;margin-left:4px}
+
+/* ── 퀴즈 결과 팝업 ── */
+.quiz-result-card{max-width:420px;width:100%;animation:card-spring .38s cubic-bezier(.17,.67,.36,1.4) both;padding:24px 20px 18px}
+.qr-icon{font-size:72px;line-height:1;margin-bottom:6px;animation:icon-wiggle .6s ease-in-out infinite alternate}
+.qr-title{font-size:clamp(20px,4vw,28px);margin:0 0 12px}
+.qr-answer-box{background:linear-gradient(135deg,#fffde0,#fff5b0);border:3px solid #e6b85a;border-radius:16px;padding:12px 18px;margin-bottom:4px;display:flex;align-items:center;gap:10px;font-size:clamp(16px,3.5vw,22px)}
+.qr-label{font-size:12px;color:#8a4b12;font-family:system-ui,'Malgun Gothic',sans-serif;font-weight:700;white-space:nowrap;background:#ffd770;padding:3px 7px;border-radius:8px}
+
+/* ── 승리 컷씬 ── */
+.victory-overlay{position:fixed;inset:0;z-index:70;background:#1a2e4acc;display:grid;place-items:center;padding:12px;overflow-y:auto;animation:veil-in .3s ease-out}
+.victory-card{background:radial-gradient(circle at 50% 10%,#fffde4,#ffd95a 50%,#ffab32 100%);border:5px solid #75431f;border-radius:28px;padding:clamp(16px,4vw,28px);text-align:center;max-width:520px;width:100%;box-shadow:0 10px 0 #ba6c25,0 24px 50px #35201466;animation:card-spring .5s cubic-bezier(.17,.67,.36,1.3) both;max-height:90vh;overflow-y:auto}
+.victory-sparks{font-size:28px;animation:icon-wiggle .8s ease-in-out infinite alternate;display:block;margin-bottom:4px}
+.victory-trophy{font-size:clamp(64px,14vw,100px);line-height:1;filter:drop-shadow(0 6px 0 #ba6c25);animation:trophy-bounce .7s ease-in-out infinite alternate}
+.victory-title{font-family:'Jua','Malgun Gothic',sans-serif;font-size:clamp(22px,5vw,36px);color:#d64c2e;text-shadow:0 3px white;margin:8px 0 14px}
+.victory-ranks{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.victory-rank{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:16px;background:#fff9e0dd;border:2px solid #e6c060;font-family:system-ui,'Malgun Gothic',sans-serif;font-size:clamp(14px,2.5vw,18px)}
+.victory-rank.rank-0{background:linear-gradient(135deg,#fff9c8,#ffe06a);border-color:#d4a000;font-size:clamp(16px,3vw,22px)}
+.victory-rank.rank-1{background:linear-gradient(135deg,#f0f4f8,#d8e4f0);border-color:#aab8c8}
+.victory-rank.rank-2{background:linear-gradient(135deg,#fff0e8,#ffd4b0);border-color:#cc8844}
+.vr-medal{font-size:1.6em;flex-shrink:0}
+.vr-av{width:36px;height:36px;border-radius:50%;border:2px solid white;box-shadow:0 2px 4px #0004;flex-shrink:0}
+.vr-name{flex:1;font-weight:700;text-align:left}
+.vr-score{font-weight:800;color:#8a4b12;white-space:nowrap}
+.victory-awards{background:#fff9e8dd;border-radius:18px;border:2px solid #e6c060;padding:12px;margin:10px 0}
+.victory-awards h2{font-family:'Jua','Malgun Gothic',sans-serif;font-size:clamp(16px,3vw,22px);margin:0 0 10px;color:#75431f}
+.award-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.award-item{background:white;border-radius:12px;padding:10px 8px;border:2px solid #e6b85a;text-align:center}
+.aw-icon{font-size:28px;line-height:1;margin-bottom:3px}
+.aw-title{font-size:11px;font-family:system-ui,'Malgun Gothic',sans-serif;color:#8a4b12;font-weight:700;margin-bottom:2px}
+.aw-name{font-family:'Jua','Malgun Gothic',sans-serif;font-size:clamp(13px,2.5vw,16px);color:#3a2010;font-weight:700}
+.aw-sub{font-size:11px;font-family:system-ui,'Malgun Gothic',sans-serif;color:#8a6040}
+.victory-stars{font-family:system-ui,'Malgun Gothic',sans-serif;font-size:clamp(14px,2.5vw,18px);font-weight:700;color:#75431f;margin:12px 0 10px;padding:8px;background:#fffde0;border-radius:12px;border:2px solid #f5c430}
+.victory-close{width:100%;margin-top:4px;min-height:52px;font-size:18px}
+@keyframes trophy-bounce{to{transform:translateY(-10px) scale(1.05)}}
+
+/* ── 관전자 점수 조정 버튼 ── */
+.adj-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:2px solid;border-bottom-width:4px;font-size:14px;padding:0;min-height:0;cursor:pointer;font-weight:800}
+.adj-plus{background:linear-gradient(#6aee6a,#3abb3a);border-color:#1a8a1a;box-shadow:0 3px 0 #5acc5a}
+.adj-minus{background:linear-gradient(#ee6a6a,#bb3a3a);border-color:#8a1a1a;box-shadow:0 3px 0 #cc5a5a;color:white}
+
