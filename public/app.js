@@ -1,5 +1,5 @@
 const app=document.querySelector('#app'); let room=null, playerId=localStorage.playerId||'', roomId=localStorage.roomId||'', busy=false, rolling=false;
-let prevTurnPlayerId=null, lastQuizT=0, victoryShown=false;
+let prevTurnPlayerId=null, lastQuizT=0, victoryShown=false, lastStateKey='';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function api(url,body){const r=await fetch(url,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok)throw Error(d.error);return d}
 
@@ -136,12 +136,13 @@ function render(){
     ${!room.started?lobbyHtml(mine,cur):`
     <section class="panel">
       <b>${room.started?'현재 차례: '+esc(cur.name)+' 팀':'대기 중'}</b>
-      <div class="players">${room.players.map((p,i)=>`<div class="player ${p.id===cur.id&&room.started?'turn':''}" style="border-color:${p.color}">${p.avatarSrc?`<img class="avatar-img" src="${p.avatarSrc}" alt="${esc(p.name)}" title="${esc(p.name)}">`:''}<b>${esc(p.name)}</b> · ${p.money}달란트<br><small>땅 ${p.lands.length}개 · 건물 ${p.lands.reduce((a,l)=>a+l.buildings,0)}개${p.quizWins?` · 퀴즈 ${p.quizWins}회`:''}</small>${p.lands.some(l=>l.buildings>0)?`<small style="color:#7c3aed">${p.lands.filter(l=>l.buildings>0).map(l=>BUILD_ICONS[l.buildings]).join('')}</small>`:''}</div>`).join('')}</div>
+      <div class="players">${room.players.map((p,i)=>`<div class="player ${p.id===cur.id&&room.started?'turn':''}" style="border-color:${p.color}">${p.avatarSrc?`<img class="avatar-img" src="${p.avatarSrc}" alt="${esc(p.name)}" title="${esc(p.name)}">`:''}<b>${esc(p.name)}</b> · ${p.money}달란트<br><small>땅 ${p.lands.length}개 · 건물 ${p.lands.reduce((a,l)=>a+l.buildings,0)}개${p.quizWins?` · 퀴즈 ${p.quizWins}회`:''}</small>${p.bankrupt?'<small style="color:#c03030;font-weight:700">💸 파산</small>':p.jailTurns>0?`<small style="color:#b45309">🔒 감옥 (${p.jailTurns}턴)</small>`:p.lands.some(l=>l.buildings>0)?`<small style="color:#7c3aed">${p.lands.filter(l=>l.buildings>0).map(l=>BUILD_ICONS[l.buildings]).join('')}</small>`:''}</div>`).join('')}</div>
     </section>
     <section class="panel">
-      <div class="notice">${isMine?'내 차례입니다. <b>'+esc(spot[0])+'</b>에 있습니다.':'다른 팀이 플레이 중입니다.'}</div>
+      <div class="notice">${isMine?(mine.jailTurns>0?`🔒 감옥에 있습니다! 더블로 탈출하거나 보석금 10달란트로 나올 수 있어요. (${mine.jailTurns}턴 남음)`:`내 차례입니다. <b>${esc(spot[0])}</b>에 있습니다.`):'다른 팀이 플레이 중입니다.'}</div>
       <div class="actions">
-        <button ${!isMine||mine.canAct||room.paused?'disabled':''} onclick="doAction('roll')">🎲 주사위 던지기</button>
+        ${mine.jailTurns>0&&isMine?`<button ${!isMine||mine.canAct||room.paused?'disabled':''} onclick="doAction('bail')">🔓 보석금 내기 (10달란트)</button>`:''}
+        <button ${!isMine||mine.canAct||mine.jailTurns>0&&false||room.paused?'disabled':''} onclick="doAction('roll')">${mine.jailTurns>0?'🎲 더블 도전 (감옥 탈출)':'🎲 주사위 던지기'}</button>
         ${spot[1]==='land'&&!o?`<button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="doAction('buy')">🏷️ 땅 구입 (${spot[2]})</button>`:''}
         ${(()=>{const myLand=mine?.lands?.find(l=>l.idx===mine.position); if(!myLand||myLand.buildings>=4) return ''; const nextLv=myLand.buildings+1; const cost=buildCost(spot[2],myLand.buildings); return `<button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="doAction('build')">${BUILD_ICONS[nextLv]} ${BUILDINGS[nextLv]} 건설 (${cost}달란트)</button>`;})()}
         ${o&&o.id!==playerId?`<button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="doAction('pay')">💸 통행료 내기</button>`:''}
@@ -249,6 +250,13 @@ window.togglePause=async function(){
   try{room=await api('/api/pause',{roomId,playerId});render();}catch(e){alert(e.message);}
 };
 
+function stateKey(r){
+  return JSON.stringify({
+    turn:r.turn, started:r.started, finished:r.finished, paused:r.paused,
+    log0:r.log[0]?.message,
+    players:r.players.map(p=>({m:p.money,pos:p.position,lands:p.lands.length,jail:p.jailTurns,bankrupt:p.bankrupt,bld:p.lands.reduce((s,l)=>s+l.buildings,0)}))
+  });
+}
 async function poll(){
   if(!roomId)return;
   try{
@@ -262,7 +270,9 @@ async function poll(){
     if(qr && qr.t!==lastQuizT){lastQuizT=qr.t;showQuizResult(qr);}
     // 승리 컷씬
     if(room.finished && !victoryShown){victoryShown=true;setTimeout(showVictory,600);}
-    render();
+    // 상태 변경 시에만 렌더 → 깜빡임 방지
+    const sk=stateKey(room);
+    if(sk!==lastStateKey){lastStateKey=sk;render();}
   }catch(e){localStorage.removeItem('roomId');localStorage.removeItem('playerId');roomId='';playerId='';welcome();}
 }
 setInterval(poll,1500);roomId?poll():welcome();

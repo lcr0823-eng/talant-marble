@@ -104,23 +104,45 @@ function log(room, message) { room.log.unshift({ message, time: new Date().toLoc
 function newRoom(hostName, mode='online', count=1, avatar='🦁', startMoney=60) {
   const sm = Math.max(20, Math.min(200, Number(startMoney)||60));
   const room = { id: code(), started:false, finished:false, paused:false, hostId:crypto.randomUUID(), players:[], turn:0, log:[], winner:null, mode, tabletop:mode==='tabletop', duration:25, endsAt:null, sharedStars:0, sharedGoal:12 };
-  room.players.push({ id:room.hostId, name:hostName || '방장', avatar, avatarSrc:'', money:sm, position:0, lands:[], items:[], desertTurns:0, color:'#ee6c4d', quizWins:0, miniWins:0, sharing:0 });
+  room.players.push({ id:room.hostId, name:hostName || '방장', avatar, avatarSrc:'', money:sm, position:0, lands:[], items:[], jailTurns:0, bankrupt:false, color:'#ee6c4d', quizWins:0, miniWins:0, sharing:0 });
   const extra = mode==='solo' ? 3 : mode==='tabletop' ? Math.max(1, Math.min(4, Number(count)||3)-1) : 0;
   const colors=['#3d5a80','#2a9d8f','#e9c46a','#9b5de5'];
   const avatars=['🐻','🦊','🐼','🐯'];
-  for(let i=0;i<extra;i++) room.players.push({ id:crypto.randomUUID(), name:mode==='solo'?`자동 탐험팀 ${i+1}`:`${i+2}팀`, avatar:avatars[i]||'🐨', money:sm, position:0, lands:[], items:[], desertTurns:0, color:colors[i], bot:mode==='solo' });
+  for(let i=0;i<extra;i++) room.players.push({ id:crypto.randomUUID(), name:mode==='solo'?`자동 탐험팀 ${i+1}`:`${i+2}팀`, avatar:avatars[i]||'🐨', money:sm, position:0, lands:[], items:[], jailTurns:0, bankrupt:false, color:colors[i], bot:mode==='solo' });
   log(room, '게임 방이 만들어졌습니다.'); rooms.set(room.id, room); return room;
 }
-function nextTurn(room) { room.turn = (room.turn + 1) % room.players.length; }
+function nextTurn(room) {
+  const n = room.players.length;
+  let next = (room.turn + 1) % n;
+  // 파산 플레이어 건너뜀
+  let safety = 0;
+  while(room.players[next]?.bankrupt && safety++ < n) next = (next+1) % n;
+  room.turn = next;
+}
+function checkBankruptcy(room, player) {
+  if(player.money <= 0 && !player.bankrupt) {
+    player.money = 0; player.bankrupt = true;
+    // 땅/건물 모두 몰수
+    player.lands = []; player.jailTurns = 0;
+    log(room, `💸 ${player.name} 팀이 파산했습니다! 모든 땅이 몰수됩니다.`);
+    const active = room.players.filter(p => !p.bankrupt);
+    if(active.length <= 1 && room.players.length > 1) {
+      room.finished = true;
+      room.winner = active[0]?.id || room.players[0].id;
+      log(room, `🏆 ${active[0]?.name||room.players[0].name} 팀이 최후의 승자!`);
+    }
+  }
+}
 function takeBotTurns(room) {
   let safety=0;
-  while(active(room)?.bot && safety++<24) {
+  while(active(room)?.bot && !active(room)?.bankrupt && safety++<24) {
     const bot=active(room);
+    if(bot.jailTurns > 0) { action(room,bot,'roll',{}); action(room,bot,'end',{}); continue; }
     action(room,bot,'roll',{});
     if(!bot.canAct) continue;
-    const space=board[bot.position]; const owner=room.players.find(p=>p.lands.some(l=>l.idx===bot.position));
-    if(space[1]==='land' && !owner && bot.money>=space[2]) action(room,bot,'buy',{});
-    else if(space[1]==='land' && owner && owner.id!==bot.id) action(room,bot,'pay',{});
+    const space=board[bot.position]; const own=room.players.find(p=>p.lands.some(l=>l.idx===bot.position));
+    if(space[1]==='land' && !own && bot.money>=space[2]) action(room,bot,'buy',{});
+    else if(space[1]==='land' && own && own.id!==bot.id) action(room,bot,'pay',{});
     else if(space[1]==='chance') action(room,bot,'chance',{});
     bot.question=null;
     action(room,bot,'end',{});
@@ -131,13 +153,40 @@ function action(room, player, type, body) {
   if (room.paused && type !== 'end') throw Error('게임이 일시 정지 중입니다.');
   if (active(room).id !== player.id) throw Error('아직 내 차례가 아닙니다.');
   if (type === 'roll') {
-    if (player.desertTurns > 0) { player.desertTurns--; log(room, `${player.name} 팀은 광야에서 머뭅니다.`); nextTurn(room); return; }
+    if (player.bankrupt) { nextTurn(room); return; }
     const a = 1 + Math.floor(Math.random()*6), b = 1 + Math.floor(Math.random()*6); const steps=a+b;
-    const before=player.position; player.position=(before+steps)%board.length; if (player.position < before || (before===0 && steps>0 && player.position!==0)) { if(player.position<=before+steps-board.length && before+steps>=board.length){player.money += 20; log(room, `${player.name} 팀이 출발지를 지나 20달란트를 받았습니다.`);} }
+    player.lastRoll=[a,b];
+    // ── 감옥 처리 ──────────────────────────────────────────────
+    if (player.jailTurns > 0) {
+      if (a === b) {
+        // 더블! 감옥 탈출 후 이동
+        player.jailTurns = 0;
+        log(room, `🎉 ${player.name} 팀이 더블(${a}+${b})로 감옥을 탈출했습니다!`);
+        const before=player.position; player.position=(9+steps)%board.length;
+        if(player.position < 9) { player.money+=20; log(room, `${player.name} 팀이 출발지를 지나 20달란트를 받았습니다.`); }
+      } else {
+        player.jailTurns--;
+        if(player.jailTurns === 0) {
+          player.money = Math.max(0, player.money - 10);
+          log(room, `${player.name} 팀이 보석금 10달란트를 내고 감옥을 나왔습니다.`);
+        } else {
+          log(room, `🔒 ${player.name} 팀이 감옥에서 주사위 ${a}+${b}... 탈출 실패! (${player.jailTurns}턴 남음)`);
+          nextTurn(room); return;
+        }
+      }
+      player.canAct=true; if(a===b) player.bonus=true; return;
+    }
+    // ── 일반 이동 ───────────────────────────────────────────────
+    const before=player.position; player.position=(before+steps)%board.length;
     if(player.position < before) { player.money += 20; log(room, `${player.name} 팀이 출발지를 지나 20달란트를 받았습니다.`); }
     const space=board[player.position]; log(room, `${player.name} 팀이 주사위 ${a}+${b}=${steps}, ${space[0]}에 도착했습니다.`);
-    player.lastRoll=[a,b]; player.canAct=true;
-    if (space[1] === 'desert') { player.desertTurns = 2; log(room, `${player.name} 팀은 광야에서 두 턴을 쉽니다.`); }
+    player.canAct=true;
+    if (space[1] === 'desert') {
+      // 광야 → 감옥 이동
+      player.position = 9; player.jailTurns = 3;
+      log(room, `🔒 ${player.name} 팀이 광야를 지나 감옥에 갇혔습니다! (더블 or 보석금 10달란트로 탈출)`);
+      player.canAct=false; nextTurn(room); return;
+    }
     if (space[1] === 'rest') { player.money+=10; log(room, `${player.name} 팀이 안식 칸에서 10달란트를 받았습니다! 😌`); }
     if (a===b) player.bonus=true;
   } else if (type === 'buy') {
@@ -156,7 +205,22 @@ function action(room, player, type, body) {
   } else if (type === 'pay') {
     const idx=player.position, space=board[idx], lowner=room.players.find(p=>p.lands.some(l=>l.idx===idx)); if(!lowner || lowner.id===player.id) throw Error('통행료 대상이 아닙니다.');
     if(player.skipFee) { player.skipFee=false; log(room, `${player.name} 팀이 통행료 면제권으로 통행료를 면제받았습니다!`); }
-    else { const land=lowner.lands.find(l=>l.idx===idx); const feeRates=[0.1,0.2,0.4,0.7,1.2]; const fee=Math.max(3,Math.round(space[2]*(feeRates[land.buildings]||0.1))); const paid=Math.min(player.money,fee); player.money-=paid; lowner.money+=paid; log(room, `${player.name} 팀이 ${lowner.name} 팀에게 통행료 ${paid}달란트를 냈습니다.`); }
+    else {
+      const land=lowner.lands.find(l=>l.idx===idx);
+      const feeRates=[0.1,0.2,0.4,0.7,1.2];
+      // 독점 보너스: 그룹 전부 소유 + 건물 없을 때 기본 통행료 2배
+      let monopoly=1;
+      if(land.buildings===0 && space[5]) {
+        const gi=board.reduce((a,s,i)=>s[1]==='land'&&s[5]===space[5]?[...a,i]:a,[]);
+        if(gi.every(i=>lowner.lands.some(l=>l.idx===i))) monopoly=2;
+      }
+      const fee=Math.max(3,Math.round(space[2]*(feeRates[land.buildings]||0.1)*monopoly));
+      const paid=Math.min(player.money,fee);
+      player.money-=paid; lowner.money+=paid;
+      const monopolyNote=monopoly===2?' (독점 2배!)':'';
+      log(room, `${player.name} 팀이 ${lowner.name} 팀에게 통행료 ${paid}달란트를 냈습니다${monopolyNote}`);
+      checkBankruptcy(room, player);
+    }
   } else if (type === 'chance') {
     const card=chanceCards[Math.floor(Math.random()*chanceCards.length)];
     if(card[2]) { card[2](player); }
@@ -165,6 +229,12 @@ function action(room, player, type, body) {
     else if(card[0]==='말씀의 능력') { room.sharedStars=(room.sharedStars||0)+1; player.money+=5; }
     player.card=card.slice(0,2); log(room, `${player.name} 팀: ${card[0]} - ${card[1]}`);
   } else if (type === 'quiz') { const q=questions[Math.floor(Math.random()*questions.length)]; player.question=q; log(room, `${player.name} 팀이 퀴즈에 도전합니다.`); }
+  else if (type === 'bail') {
+    if(!player.jailTurns) throw Error('감옥에 있지 않습니다.');
+    if(player.money < 10) throw Error('보석금 10달란트가 필요합니다.');
+    player.money -= 10; player.jailTurns = 0;
+    log(room, `🔓 ${player.name} 팀이 보석금 10달란트를 내고 감옥에서 나왔습니다!`);
+  }
   else if (type === 'travel') { const target=Number(body.target); if (!Number.isInteger(target) || target < 0 || target >= board.length) throw Error('이동할 땅을 선택해 주세요.'); if (player.money < 50) throw Error('세계여행에는 50달란트가 필요합니다.'); player.money -= 50; player.position = target; log(room, `${player.name} 팀이 세계여행으로 ${board[target][0]}에 도착했습니다.`); }
   else if (type === 'answer') {
     if(!player.question) throw Error('현재 풀 퀴즈가 없습니다.');
@@ -210,7 +280,7 @@ const server=http.createServer((req,res)=>{
   if(req.method==='POST' && url.pathname.startsWith('/api/')) { let raw=''; req.on('data',d=>raw+=d); req.on('end',()=>{ try { const body=raw?JSON.parse(raw):{};
     if(url.pathname==='/api/create'){ const r=newRoom(body.name, body.mode, body.count, body.avatar, body.startMoney); if(body.duration) r.duration=Math.max(5,Math.min(60,Number(body.duration))); if(body.avatarSrc) r.players[0].avatarSrc=body.avatarSrc; return send(res,200,{room:roomData(r),playerId:r.hostId}); }
     const r=rooms.get(body.roomId); if(!r) return send(res,404,{error:'방을 찾을 수 없습니다.'});
-    if(url.pathname==='/api/join'){ if(r.started) throw Error('이미 시작된 게임입니다.'); if(r.players.length>=6) throw Error('방이 가득 찼습니다.'); const p={id:crypto.randomUUID(),name:(body.name||'참여자').slice(0,12),avatar:body.avatar||'david',avatarSrc:body.avatarSrc||'',money:r.players[0]?.money||60,position:0,lands:[],items:[],desertTurns:0,color:['#3d5a80','#2a9d8f','#e9c46a','#9b5de5','#e76f51'][r.players.length-1],quizWins:0}; r.players.push(p); log(r,`${p.name} 팀이 참여했습니다.`); return send(res,200,{room:roomData(r),playerId:p.id}); }
+    if(url.pathname==='/api/join'){ if(r.started) throw Error('이미 시작된 게임입니다.'); if(r.players.length>=6) throw Error('방이 가득 찼습니다.'); const p={id:crypto.randomUUID(),name:(body.name||'참여자').slice(0,12),avatar:body.avatar||'david',avatarSrc:body.avatarSrc||'',money:r.players[0]?.money||60,position:0,lands:[],items:[],jailTurns:0,bankrupt:false,color:['#3d5a80','#2a9d8f','#e9c46a','#9b5de5','#e76f51'][r.players.length-1],quizWins:0}; r.players.push(p); log(r,`${p.name} 팀이 참여했습니다.`); return send(res,200,{room:roomData(r),playerId:p.id}); }
     if(url.pathname==='/api/start'){ if(body.playerId!==r.hostId) throw Error('방장만 시작할 수 있습니다.'); if(r.mode==='online' && r.players.length<2) throw Error('두 팀 이상 참여해야 합니다.'); r.started=true; r.endsAt=Date.now()+r.duration*60000; log(r,'게임을 시작합니다!'); return send(res,200,roomData(r)); }
     if(url.pathname==='/api/finish'){ if(body.playerId!==r.hostId) throw Error('방장만 종료할 수 있습니다.'); r.finished=true; r.winner=[...r.players].sort((a,b)=>(b.money+b.lands.length*20)-(a.money+a.lands.length*20))[0]?.id; log(r,'게임을 마치고 시상식을 시작합니다.'); return send(res,200,roomData(r)); }
     if(url.pathname==='/api/pause'){ if(body.playerId!==r.hostId) throw Error('방장만 가능합니다.'); r.paused=!r.paused; log(r, r.paused?'⏸ 게임이 일시 정지됐습니다.':'▶️ 게임이 재개됐습니다.'); return send(res,200,roomData(r)); }
