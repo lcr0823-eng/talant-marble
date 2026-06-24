@@ -124,11 +124,16 @@ function action(room, player, type, body) {
     const idx=player.position, space=board[idx]; if(space[1] !== 'land' || room.players.some(p=>p.lands.some(l=>l.idx===idx))) throw Error('구입할 수 없는 땅입니다.');
     if(player.money<space[2]) throw Error('달란트가 부족합니다.'); player.money-=space[2]; player.lands.push({idx, buildings:0}); log(room, `${player.name} 팀이 ${space[0]}을(를) 구입했습니다.`);
   } else if (type === 'build') {
-    const land=player.lands.find(l=>l.idx===player.position); if(!land || land.buildings>=3) throw Error('이 땅에는 더 지을 수 없습니다.'); if(player.money<5) throw Error('건설비 5달란트가 필요합니다.'); player.money-=5; land.buildings++; log(room, `${player.name} 팀이 ${board[land.idx][0]}에 건물을 세웠습니다.`);
+    const idx=player.position, space=board[idx];
+    const land=player.lands.find(l=>l.idx===idx); if(!land || land.buildings>=4) throw Error('이 땅에는 더 지을 수 없습니다.');
+    const buildCosts=[Math.round(space[2]*0.5),Math.round(space[2]*0.75),Math.round(space[2]*1),Math.round(space[2]*1.5)];
+    const cost=buildCosts[land.buildings]; if(player.money<cost) throw Error(`건설비 ${cost}달란트가 필요합니다.`);
+    player.money-=cost; land.buildings++;
+    const bnames=['셀룸','기도실','교회','하나님의 나라']; log(room, `${player.name} 팀이 ${space[0]}에 ${bnames[land.buildings-1]}을(를) 세웠습니다! 🏛️`);
   } else if (type === 'pay') {
-    const idx=player.position, lowner=room.players.find(p=>p.lands.some(l=>l.idx===idx)); if(!lowner || lowner.id===player.id) throw Error('통행료 대상이 아닙니다.');
+    const idx=player.position, space=board[idx], lowner=room.players.find(p=>p.lands.some(l=>l.idx===idx)); if(!lowner || lowner.id===player.id) throw Error('통행료 대상이 아닙니다.');
     if(player.skipFee) { player.skipFee=false; log(room, `${player.name} 팀이 통행료 면제권으로 통행료를 면제받았습니다!`); }
-    else { const land=lowner.lands.find(l=>l.idx===idx), fee=5+land.buildings*5; const paid=Math.min(player.money,fee); player.money-=paid; lowner.money+=paid; log(room, `${player.name} 팀이 ${lowner.name} 팀에게 통행료 ${paid}달란트를 냈습니다.`); }
+    else { const land=lowner.lands.find(l=>l.idx===idx); const feeRates=[0.1,0.2,0.4,0.7,1.2]; const fee=Math.max(3,Math.round(space[2]*(feeRates[land.buildings]||0.1))); const paid=Math.min(player.money,fee); player.money-=paid; lowner.money+=paid; log(room, `${player.name} 팀이 ${lowner.name} 팀에게 통행료 ${paid}달란트를 냈습니다.`); }
   } else if (type === 'chance') {
     const card=chanceCards[Math.floor(Math.random()*chanceCards.length)];
     if(card[2]) { card[2](player); }
@@ -158,9 +163,9 @@ function action(room, player, type, body) {
       player.items.splice(idx,1); player.position=target;
       log(room, `${player.name} 팀이 이동권으로 ${board[target][0]}에 도착했습니다.`);
     } else if(itemName === '무료 건물권') {
-      const land=player.lands.find(l=>l.idx===player.position); if(!land||land.buildings>=3) throw Error('현재 위치에 건물을 더 지을 수 없습니다.');
+      const land=player.lands.find(l=>l.idx===player.position); if(!land||land.buildings>=4) throw Error('현재 위치에 건물을 더 지을 수 없습니다.');
       player.items.splice(idx,1); land.buildings++;
-      log(room, `${player.name} 팀이 무료 건물권으로 ${board[land.idx][0]}에 건물을 세웠습니다!`);
+      const bnames2=['셀룸','기도실','교회','하나님의 나라']; log(room, `${player.name} 팀이 무료 건물권으로 ${board[land.idx][0]}에 ${bnames2[land.buildings-1]}을(를) 세웠습니다! 🎁`);
     } else if(itemName === '통행료 면제권') {
       player.items.splice(idx,1); player.skipFee=true;
       log(room, `${player.name} 팀이 통행료 면제권을 준비했습니다. 다음 통행료를 면제받습니다.`);

@@ -1,4 +1,4 @@
-const CACHE = 'talant-marble-v5';
+const CACHE = 'talant-marble-v6';
 const ASSETS = ['/', '/index.html', '/app.js', '/animate.js', '/sound.js', '/effects.js', '/effects.css', '/modes.js', '/gameplus.js', '/music-player.js', '/style.css', '/manifest.json', '/icon.svg',
   '/avatars/david.svg','/avatars/moses.svg','/avatars/jesus.svg','/avatars/mary.svg',
   '/avatars/noah.svg','/avatars/joseph.svg','/avatars/esther.svg','/avatars/jonah.svg'];

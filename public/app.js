@@ -3,6 +3,11 @@ let prevTurnPlayerId=null, lastQuizT=0, victoryShown=false;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function api(url,body){const r=await fetch(url,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok)throw Error(d.error);return d}
 
+const BUILDINGS=['','셀룸','기도실','교회','하나님의 나라'];
+const BUILD_ICONS=['','🏠','🙏','⛪','👑'];
+function buildIcon(n){return BUILD_ICONS.slice(1,n+1).join('')||''}
+function buildCost(landPrice,currentLevel){const rates=[0.5,0.75,1,1.5];return Math.round(landPrice*(rates[currentLevel]||0.5));}
+
 const AVATARS=[
   {id:'david',  name:'다윗',  src:'/avatars/david.svg'},
   {id:'moses',  name:'모세',  src:'/avatars/moses.svg'},
@@ -70,7 +75,7 @@ async function joinRoom(){try{const code=document.querySelector('#code').value.t
 function save(){localStorage.playerId=playerId;localStorage.roomId=roomId} function me(){return room?.players.find(p=>p.id===playerId)} function owner(idx){return room.players.find(p=>p.lands.some(l=>l.idx===idx))}
 function die(n){const on={1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]}[n]||[];return `<i class="die ${rolling?'rolling':''}">${[1,2,3,4,5,6,7,8,9].map(i=>`<span style="visibility:${on.includes(i)?'visible':'hidden'}"></span>`).join('')}</i>`}
 function boardHtml(){const slots=Array(64).fill(''); const indexes=[];for(let i=0;i<8;i++)indexes.push(i);for(let i=1;i<8;i++)indexes.push(i*8+7);for(let i=6;i>=0;i--)indexes.push(56+i);for(let i=6;i>0;i--)indexes.push(i*8);room.board.forEach((s,i)=>{const o=owner(i), people=room.players.filter(p=>p.position===i); const oAvatarSrc=o?(o.avatarSrc||avatarSrc(o.avatar)||''):'';
-slots[indexes[i]]=`<div class="space ${s[1]}" style="--c:${o?.color||'#8ac'}" onclick="showSpaceInfo(${i})"><b>${esc(s[0])}</b>${s[1]==='chance'?'<span class="space-icon key-icon">🗝️</span>':''}<small>${s[2]?s[2]+' 달란트':esc(s[3])}</small>${o?`<small class="land-owner" style="color:${o.color}">${oAvatarSrc?`<img src="${oAvatarSrc}" style="width:12px;height:12px;border-radius:50%;vertical-align:middle">`:''} ${o.lands.find(l=>l.idx===i)?.buildings?'🏠'.repeat(o.lands.find(l=>l.idx===i).buildings):''}</small>`:''}<div>${people.map(p=>`<i class="token" title="${esc(p.name)}" style="background:${p.color}">${p.avatarSrc?`<img src="${p.avatarSrc}" style="width:14px;height:14px;border-radius:50%">`:p.avatar||''}</i>`).join('')}</div></div>`});const heroClass=sessionStorage.getItem('talentHeroesSeen')?'':' hero-enter';sessionStorage.setItem('talentHeroesSeen','1');const town=`<div class="center-scene"><span class="cloud c1">☁️</span><span class="cloud c2">☁️</span><span class="star s1">✦</span><span class="star s2">✦</span><div class="town-sign"><small>말씀을 따라 떠나는</small><strong>달란트 타운</strong><em>♟ 함께 즐기는 믿음의 보드게임 ♟</em></div><div class="hills">⛰️ <span>🌳</span> <span>⛪</span> <span>🌳</span> ⛰️</div><div class="mascots"><img class="${heroClass}" src="/assets/bible-heroes.png" alt="달란트 타운 탐험대"></div></div>`;return town+slots.map(x=>x||'<div class="space"></div>').join('')}
+slots[indexes[i]]=`<div class="space ${s[1]}" style="--c:${o?.color||'#8ac'}" onclick="showSpaceInfo(${i})"><b>${esc(s[0])}</b>${s[1]==='chance'?'<span class="space-icon key-icon">🗝️</span>':''}<small>${s[2]?s[2]+' 달란트':esc(s[3])}</small>${o?`<small class="land-owner" style="color:${o.color}">${oAvatarSrc?`<img src="${oAvatarSrc}" style="width:12px;height:12px;border-radius:50%;vertical-align:middle">`:''} ${buildIcon(o.lands.find(l=>l.idx===i)?.buildings||0)}</small>`:''}<div>${people.map(p=>`<i class="token" title="${esc(p.name)}" style="background:${p.color}">${p.avatarSrc?`<img src="${p.avatarSrc}" style="width:14px;height:14px;border-radius:50%">`:p.avatar||''}</i>`).join('')}</div></div>`});const heroClass=sessionStorage.getItem('talentHeroesSeen')?'':' hero-enter';sessionStorage.setItem('talentHeroesSeen','1');const town=`<div class="center-scene"><span class="cloud c1">☁️</span><span class="cloud c2">☁️</span><span class="star s1">✦</span><span class="star s2">✦</span><div class="town-sign"><small>말씀을 따라 떠나는</small><strong>달란트 타운</strong><em>♟ 함께 즐기는 믿음의 보드게임 ♟</em></div><div class="hills">⛰️ <span>🌳</span> <span>⛪</span> <span>🌳</span> ⛰️</div><div class="mascots"><img class="${heroClass}" src="/assets/bible-heroes.png" alt="달란트 타운 탐험대"></div></div>`;return town+slots.map(x=>x||'<div class="space"></div>').join('')}
 
 window.showSpaceInfo=function(idx){
   if(!room?.board?.[idx]) return;
@@ -79,7 +84,7 @@ window.showSpaceInfo=function(idx){
   const [icon,title,desc,fact]=edu.split('|');
   const o=owner(idx);
   const land=o?.lands?.find(l=>l.idx===idx);
-  const ownerInfo=o?`<div class="info-owner" style="border-color:${o.color}"><span>${o.avatar||'★'}</span> <b>${esc(o.name)}</b> 팀 소유${'🏠'.repeat(land?.buildings||0)}</div>`:'';
+  const bLevel=land?.buildings||0; const ownerInfo=o?`<div class="info-owner" style="border-color:${o.color}"><span>${o.avatar||'★'}</span> <b>${esc(o.name)}</b> 팀 소유 ${bLevel>0?`· ${BUILD_ICONS[bLevel]} ${BUILDINGS[bLevel]}`:''}</div>`:'';
   const pop=document.createElement('div');
   pop.className='modal space-info-pop';
   pop.innerHTML=`<div class="card space-info-card">
@@ -126,14 +131,14 @@ function render(){
     ${!room.started?lobbyHtml(mine,cur):`
     <section class="panel">
       <b>${room.started?'현재 차례: '+esc(cur.name)+' 팀':'대기 중'}</b>
-      <div class="players">${room.players.map((p,i)=>`<div class="player ${p.id===cur.id&&room.started?'turn':''}" style="border-color:${p.color}">${p.avatarSrc?`<img class="avatar-img" src="${p.avatarSrc}" alt="${esc(p.name)}" title="${esc(p.name)}">`:''}<b>${esc(p.name)}</b> · ${p.money}달란트<br><small>땅 ${p.lands.length}개 · 건물 ${p.lands.reduce((a,l)=>a+l.buildings,0)}개${p.quizWins?` · 퀴즈 ${p.quizWins}회`:''}</small></div>`).join('')}</div>
+      <div class="players">${room.players.map((p,i)=>`<div class="player ${p.id===cur.id&&room.started?'turn':''}" style="border-color:${p.color}">${p.avatarSrc?`<img class="avatar-img" src="${p.avatarSrc}" alt="${esc(p.name)}" title="${esc(p.name)}">`:''}<b>${esc(p.name)}</b> · ${p.money}달란트<br><small>땅 ${p.lands.length}개 · 건물 ${p.lands.reduce((a,l)=>a+l.buildings,0)}개${p.quizWins?` · 퀴즈 ${p.quizWins}회`:''}</small>${p.lands.some(l=>l.buildings>0)?`<small style="color:#7c3aed">${p.lands.filter(l=>l.buildings>0).map(l=>BUILD_ICONS[l.buildings]).join('')}</small>`:''}</div>`).join('')}</div>
     </section>
     <section class="panel">
       <div class="notice">${isMine?'내 차례입니다. <b>'+esc(spot[0])+'</b>에 있습니다.':'다른 팀이 플레이 중입니다.'}</div>
       <div class="actions">
         <button ${!isMine||mine.canAct||room.paused?'disabled':''} onclick="doAction('roll')">🎲 주사위 던지기</button>
         ${spot[1]==='land'&&!o?`<button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="doAction('buy')">🏷️ 땅 구입 (${spot[2]})</button>`:''}
-        ${o&&o.id===playerId&&mine.canAct?`<button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="doAction('build')">🏠 건물 짓기 (5)</button>`:''}
+        ${(()=>{const myLand=mine?.lands?.find(l=>l.idx===mine.position); if(!myLand||myLand.buildings>=4) return ''; const nextLv=myLand.buildings+1; const cost=buildCost(spot[2],myLand.buildings); return `<button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="doAction('build')">${BUILD_ICONS[nextLv]} ${BUILDINGS[nextLv]} 건설 (${cost}달란트)</button>`;})()}
         ${o&&o.id!==playerId?`<button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="doAction('pay')">💸 통행료 내기</button>`:''}
         ${spot[1]==='chance'?`<button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="doAction('chance')">🗝️ 황금열쇠</button>`:''}
         ${spot[1]==='quiz'?`<button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="doAction('quiz')">📖 퀴즈 풀기</button>`:''}
