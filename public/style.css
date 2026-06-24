@@ -169,12 +169,39 @@ input{
 /* 토큰 */
 .token{
   display:inline-flex;align-items:center;justify-content:center;
-  width:18px;height:18px;border-radius:50%;
-  margin:1px;border:2px solid white;
-  box-shadow:0 2px 0 #593728;
-  font-size:10px;
+  width:24px;height:24px;border-radius:50%;
+  margin:1px;border:2.5px solid white;
+  box-shadow:0 2px 4px #0005,0 3px 0 #593728;
+  font-size:12px;
+  position:relative;z-index:4;
 }
 .token:after{display:none}
+/* 내 토큰 강조 */
+.token.my-token{
+  border-color:#ffe04a;
+  box-shadow:0 0 0 2px #ff6b00,0 3px 0 #593728,0 4px 8px #ff6b0055;
+  animation:my-token-bounce .9s ease-in-out infinite alternate;
+}
+@keyframes my-token-bounce{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+/* 현재 차례 토큰 강조 */
+.token.active-token{
+  border-color:#fff;
+  box-shadow:0 0 0 2px #00c3ff,0 3px 0 #593728;
+}
+/* 토큰 이미지 */
+.token img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+
+/* 내 위치 칸 하이라이트 */
+.space.my-pos{
+  outline:3px solid #ff6b00;outline-offset:-2px;z-index:4;
+  background:linear-gradient(145deg,#fff8e0,#ffe8b0) !important;
+  animation:pos-glow 1.4s ease-in-out infinite alternate;
+}
+@keyframes pos-glow{from{outline-color:#ff6b00}to{outline-color:#ffd700}}
+/* 현재 차례 칸 */
+.space.active-pos{
+  outline:2.5px solid #00c3ff;outline-offset:-2px;z-index:3;
+}
 
 /* 땅 소유자 */
 .land-owner{
@@ -252,6 +279,32 @@ input{
 }
 .avatar{font-style:normal;font-size:26px;vertical-align:middle;margin-right:4px;filter:drop-shadow(0 2px 0 #fff)}
 .turn{outline:4px solid var(--gold);animation:pulse 1s infinite}
+.player.bankrupt{opacity:.5;filter:grayscale(.7)}
+.p-money{font-size:15px;font-weight:700;font-family:system-ui,'Malgun Gothic',sans-serif}
+
+/* 현재 차례 배너 */
+.cur-turn-bar{
+  display:flex;align-items:center;gap:8px;
+  background:linear-gradient(90deg,#fff8dc,#ffe8a0);
+  border:3px solid;border-radius:12px;padding:7px 10px;margin-bottom:8px;
+}
+.cur-turn-av{width:36px;height:36px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 4px #0003;flex-shrink:0}
+.cur-turn-name{font-size:16px;font-weight:700;flex:1}
+.cur-turn-label{
+  font-size:11px;font-family:system-ui,'Malgun Gothic',sans-serif;
+  background:#e85637;color:#fff;border-radius:8px;padding:2px 7px;font-weight:700;
+}
+
+/* 주사위 결과 */
+.dice-result{
+  background:#253c5b;color:#fff8d5;border-radius:10px;
+  padding:7px 12px;margin:6px 0;font-size:16px;text-align:center;
+  font-family:system-ui,'Malgun Gothic',sans-serif;font-weight:700;
+  letter-spacing:.05em;
+}
+
+/* 토큰 묶음 */
+.token-row{display:flex;flex-wrap:wrap;gap:1px;justify-content:center;margin-top:2px}
 
 /* 로그 */
 .log{font-family:system-ui,'Malgun Gothic',sans-serif;font-size:13px;max-height:160px;overflow:auto}

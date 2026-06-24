@@ -1,4 +1,4 @@
-const CACHE = 'talant-marble-v9';
+const CACHE = 'talant-marble-v10';
 const ASSETS = ['/', '/index.html', '/app.js', '/animate.js', '/sound.js', '/effects.js', '/effects.css', '/modes.js', '/gameplus.js', '/music-player.js', '/style.css', '/manifest.json', '/icon.svg'];
 
 self.addEventListener('install', e => {

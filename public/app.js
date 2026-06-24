@@ -75,8 +75,11 @@ async function joinRoom(){try{const code=document.querySelector('#code').value.t
 function save(){localStorage.playerId=playerId;localStorage.roomId=roomId} function me(){return room?.players.find(p=>p.id===playerId)} function owner(idx){return room.players.find(p=>p.lands.some(l=>l.idx===idx))}
 function die(n){const on={1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]}[n]||[];return `<i class="die ${rolling?'rolling':''}">${[1,2,3,4,5,6,7,8,9].map(i=>`<span style="visibility:${on.includes(i)?'visible':'hidden'}"></span>`).join('')}</i>`}
 const GROUP_COLORS={brown:'#c8956b',cyan:'#7dd3fc',pink:'#f9a8d4',orange:'#fb923c',red:'#f87171',yellow:'#fbbf24',green:'#4ade80',blue:'#60a5fa',purple:'#c084fc'};
-function boardHtml(){const slots=Array(100).fill(''); const indexes=[];for(let i=0;i<10;i++)indexes.push(i);for(let i=1;i<10;i++)indexes.push(i*10+9);for(let i=8;i>=0;i--)indexes.push(90+i);for(let i=8;i>0;i--)indexes.push(i*10);room.board.forEach((s,i)=>{const o=owner(i), people=room.players.filter(p=>p.position===i); const oAvatarSrc=o?(o.avatarSrc||avatarSrc(o.avatar)||''):''; const gc=s[5]?GROUP_COLORS[s[5]]:'transparent';
-slots[indexes[i]]=`<div class="space ${s[1]}" style="--c:${o?.color||'#8ac'};--gc:${gc}" onclick="showSpaceInfo(${i})"><b>${esc(s[0])}</b>${s[1]==='chance'?'<span class="space-icon key-icon">🗝️</span>':''}<small>${s[2]?s[2]+' 달':esc(s[3])}</small>${o?`<small class="land-owner" style="color:${o.color}">${oAvatarSrc?`<img src="${oAvatarSrc}" style="width:10px;height:10px;border-radius:50%;vertical-align:middle">`:''} ${buildIcon(o.lands.find(l=>l.idx===i)?.buildings||0)}</small>`:''}<div>${people.map(p=>`<i class="token" title="${esc(p.name)}" style="background:${p.color}">${p.avatarSrc?`<img src="${p.avatarSrc}" style="width:12px;height:12px;border-radius:50%">`:p.avatar||''}</i>`).join('')}</div></div>`});const heroClass=sessionStorage.getItem('talentHeroesSeen')?'':' hero-enter';sessionStorage.setItem('talentHeroesSeen','1');const town=`<div class="center-scene"><span class="cloud c1">☁️</span><span class="cloud c2">☁️</span><span class="star s1">✦</span><span class="star s2">✦</span><div class="town-sign"><small>말씀을 따라 떠나는</small><strong>달란트 타운</strong><em>♟ 함께 즐기는 믿음의 보드게임 ♟</em></div><div class="hills">⛰️ <span>🌳</span> <span>⛪</span> <span>🌳</span> ⛰️</div><div class="mascots"><img class="${heroClass}" src="/assets/bible-heroes.png" alt="달란트 타운 탐험대"></div></div>`;return town+slots.map(x=>x||'<div class="space"></div>').join('')}
+function boardHtml(){const slots=Array(100).fill(''); const indexes=[];for(let i=0;i<10;i++)indexes.push(i);for(let i=1;i<10;i++)indexes.push(i*10+9);for(let i=8;i>=0;i--)indexes.push(90+i);for(let i=8;i>0;i--)indexes.push(i*10);
+const myPos=me()?.position; const curPos=room.players[room.turn%room.players.length]?.position;
+room.board.forEach((s,i)=>{const o=owner(i), people=room.players.filter(p=>p.position===i&&!p.bankrupt); const oAvatarSrc=o?(o.avatarSrc||avatarSrc(o.avatar)||''):''; const gc=s[5]?GROUP_COLORS[s[5]]:'transparent';
+const spaceClass=[s[1], i===myPos?'my-pos':'', i===curPos&&i!==myPos?'active-pos':''].filter(Boolean).join(' ');
+slots[indexes[i]]=`<div class="space ${spaceClass}" style="--c:${o?.color||'#8ac'};--gc:${gc}" onclick="showSpaceInfo(${i})"><b>${esc(s[0])}</b>${s[1]==='chance'?'<span class="space-icon key-icon">🗝️</span>':''}<small>${s[2]?s[2]+' 달':esc(s[3])}</small>${o?`<small class="land-owner" style="color:${o.color}">${oAvatarSrc?`<img src="${oAvatarSrc}" style="width:10px;height:10px;border-radius:50%;vertical-align:middle">`:''} ${buildIcon(o.lands.find(l=>l.idx===i)?.buildings||0)}</small>`:''}<div class="token-row">${people.map(p=>{const isMe=p.id===playerId; const isCur=room.players[room.turn%room.players.length]?.id===p.id; return `<i class="token${isMe?' my-token':isCur?' active-token':''}" title="${esc(p.name)}" style="background:${p.color}">${p.avatarSrc?`<img src="${p.avatarSrc}" alt="${esc(p.name)}">`:p.avatar||'★'}</i>`;}).join('')}</div></div>`});const heroClass=sessionStorage.getItem('talentHeroesSeen')?'':' hero-enter';sessionStorage.setItem('talentHeroesSeen','1');const town=`<div class="center-scene"><span class="cloud c1">☁️</span><span class="cloud c2">☁️</span><span class="star s1">✦</span><span class="star s2">✦</span><div class="town-sign"><small>말씀을 따라 떠나는</small><strong>달란트 타운</strong><em>♟ 함께 즐기는 믿음의 보드게임 ♟</em></div><div class="hills">⛰️ <span>🌳</span> <span>⛪</span> <span>🌳</span> ⛰️</div><div class="mascots"><img class="${heroClass}" src="/assets/bible-heroes.png" alt="달란트 타운 탐험대"></div></div>`;return town+slots.map(x=>x||'<div class="space"></div>').join('')}
 
 window.showSpaceInfo=function(idx){
   if(!room?.board?.[idx]) return;
@@ -135,14 +138,21 @@ function render(){
   <aside class="side">
     ${!room.started?lobbyHtml(mine,cur):`
     <section class="panel">
-      <b>${room.started?'현재 차례: '+esc(cur.name)+' 팀':'대기 중'}</b>
-      <div class="players">${room.players.map((p,i)=>`<div class="player ${p.id===cur.id&&room.started?'turn':''}" style="border-color:${p.color}">${p.avatarSrc?`<img class="avatar-img" src="${p.avatarSrc}" alt="${esc(p.name)}" title="${esc(p.name)}">`:''}<b>${esc(p.name)}</b> · ${p.money}달란트<br><small>땅 ${p.lands.length}개 · 건물 ${p.lands.reduce((a,l)=>a+l.buildings,0)}개${p.quizWins?` · 퀴즈 ${p.quizWins}회`:''}</small>${p.bankrupt?'<small style="color:#c03030;font-weight:700">💸 파산</small>':p.jailTurns>0?`<small style="color:#b45309">🔒 감옥 (${p.jailTurns}턴)</small>`:p.lands.some(l=>l.buildings>0)?`<small style="color:#7c3aed">${p.lands.filter(l=>l.buildings>0).map(l=>BUILD_ICONS[l.buildings]).join('')}</small>`:''}</div>`).join('')}</div>
+      <div class="cur-turn-bar" style="border-color:${cur.color}">
+        ${cur.avatarSrc?`<img class="cur-turn-av" src="${cur.avatarSrc}" alt="${esc(cur.name)}">`:''}<span class="cur-turn-name" style="color:${cur.color}">${esc(cur.name)} 팀</span><span class="cur-turn-label">차례</span>
+      </div>
+      <div class="players">${room.players.map((p,i)=>`<div class="player ${p.id===cur.id&&room.started?'turn':''} ${p.bankrupt?'bankrupt':''}" style="border-color:${p.color}">
+        ${p.avatarSrc?`<img class="avatar-img" src="${p.avatarSrc}" alt="${esc(p.name)}" title="${esc(p.name)}">`:''}<b>${esc(p.name)}</b> <span class="p-money" style="color:${p.color}">💰${p.money}</span><br>
+        <small>땅 ${p.lands.length}개 · 건물 ${p.lands.reduce((a,l)=>a+l.buildings,0)}개${p.quizWins?` · 퀴즈 ${p.quizWins}회`:''}</small>
+        ${p.bankrupt?'<small style="color:#c03030;font-weight:700">💸 파산</small>':p.jailTurns>0?`<small style="color:#b45309">🔒 감옥 (${p.jailTurns}턴)</small>`:p.lands.some(l=>l.buildings>0)?`<small style="color:#7c3aed">${p.lands.filter(l=>l.buildings>0).map(l=>BUILD_ICONS[l.buildings]).join('')}</small>`:''}
+      </div>`).join('')}</div>
     </section>
     <section class="panel">
-      <div class="notice">${isMine?(mine.jailTurns>0?`🔒 감옥에 있습니다! 더블로 탈출하거나 보석금 10달란트로 나올 수 있어요. (${mine.jailTurns}턴 남음)`:`내 차례입니다. <b>${esc(spot[0])}</b>에 있습니다.`):'다른 팀이 플레이 중입니다.'}</div>
+      <div class="notice">${isMine?(mine.jailTurns>0?`🔒 감옥에 있습니다! 더블로 탈출하거나 보석금 10달란트로 나올 수 있어요. (${mine.jailTurns}턴 남음)`:`내 차례입니다. <b>${esc(spot[0])}</b>에 있습니다.`):`<b>${esc(cur.name)}</b> 팀이 플레이 중입니다.`}</div>
+      ${mine.lastRoll?`<div class="dice-result">🎲 ${mine.lastRoll[0]} + ${mine.lastRoll[1]} = <b>${mine.lastRoll[0]+mine.lastRoll[1]}</b>${mine.lastRoll[0]===mine.lastRoll[1]?' 🎉 더블!':''}</div>`:''}
       <div class="actions">
         ${mine.jailTurns>0&&isMine?`<button ${!isMine||mine.canAct||room.paused?'disabled':''} onclick="doAction('bail')">🔓 보석금 내기 (10달란트)</button>`:''}
-        <button ${!isMine||mine.canAct||mine.jailTurns>0&&false||room.paused?'disabled':''} onclick="doAction('roll')">${mine.jailTurns>0?'🎲 더블 도전 (감옥 탈출)':'🎲 주사위 던지기'}</button>
+        <button ${!isMine||mine.canAct||room.paused?'disabled':''} onclick="doAction('roll')">${mine.jailTurns>0?'🎲 더블 도전 (감옥 탈출)':'🎲 주사위 던지기'}</button>
         ${spot[1]==='land'&&!o?`<button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="doAction('buy')">🏷️ 땅 구입 (${spot[2]})</button>`:''}
         ${(()=>{const myLand=mine?.lands?.find(l=>l.idx===mine.position); if(!myLand||myLand.buildings>=4) return ''; const nextLv=myLand.buildings+1; const cost=buildCost(spot[2],myLand.buildings); return `<button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="doAction('build')">${BUILD_ICONS[nextLv]} ${BUILDINGS[nextLv]} 건설 (${cost}달란트)</button>`;})()}
         ${o&&o.id!==playerId?`<button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="doAction('pay')">💸 통행료 내기</button>`:''}
@@ -151,7 +161,6 @@ function render(){
         ${spot[1]==='travel'?`<button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="travel()">✈️ 세계여행 (50)</button>`:''}
         <button ${!isMine||!mine.canAct||room.paused?'disabled':''} onclick="doAction('end')">✔️ 턴 마치기</button>
       </div>
-      ${mine.lastRoll?`<p class="muted">최근 주사위: ${mine.lastRoll.join(' + ')}</p>`:''}
       ${mine.card?`<div class="notice card-notice"><b>${mine.card[0]}</b><br>${mine.card[1]}</div>`:''}
     </section>`}
     <section class="panel log"><b>게임 소식</b>${room.log.map(x=>`<p>[${x.time}] ${esc(x.message)}</p>`).join('')}</section>
