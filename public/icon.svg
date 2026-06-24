@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 배경 -->
+  <rect width="512" height="512" rx="110" fill="#f7eecf"/>
+  <!-- 갈색 테두리 -->
+  <rect x="12" y="12" width="488" height="488" rx="100" fill="none" stroke="#78431e" stroke-width="24"/>
+  <!-- 보드 배경 -->
+  <rect x="40" y="40" width="432" height="432" rx="80" fill="#965426"/>
+  <!-- 보드 안쪽 -->
+  <rect x="60" y="60" width="392" height="392" rx="68" fill="#f7eecf"/>
+  <!-- 타이틀 텍스트 -->
+  <text x="256" y="210" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="72" fill="#e85637">달란트</text>
+  <text x="256" y="300" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="72" fill="#75431f">마블</text>
+  <!-- 주사위 왼쪽 -->
+  <rect x="75" y="340" width="90" height="90" rx="18" fill="white" stroke="#8d5571" stroke-width="5"/>
+  <circle cx="120" cy="385" r="10" fill="#5b3151"/>
+  <!-- 주사위 오른쪽 -->
+  <rect x="347" y="340" width="90" height="90" rx="18" fill="white" stroke="#8d5571" stroke-width="5"/>
+  <circle cx="370" cy="362" r="8" fill="#5b3151"/>
+  <circle cx="392" cy="385" r="8" fill="#5b3151"/>
+  <circle cx="415" cy="408" r="8" fill="#5b3151"/>
+  <!-- 십자가 -->
+  <rect x="238" y="88" width="36" height="100" rx="8" fill="#e85637"/>
+  <rect x="210" y="108" width="92" height="32" rx="8" fill="#e85637"/>
+  <!-- 별 -->
+  <text x="256" y="348" text-anchor="middle" font-size="48" fill="#ffbd2e">⭐</text>
+</svg>
