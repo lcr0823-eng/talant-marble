@@ -45,7 +45,29 @@ async function createRoom(){try{const d=await api('/api/create',{name:document.q
 async function joinRoom(){try{const code=document.querySelector('#code').value.trim().toUpperCase(), name=document.querySelector('#name').value||'참여팀';const d=await api('/api/join',{roomId:code,name,avatar:chosenAvatar});room=d.room;playerId=d.playerId;roomId=room.id;save();if(history.replaceState)history.replaceState(null,'','/');render()}catch(e){alert(e.message)}}
 function save(){localStorage.playerId=playerId;localStorage.roomId=roomId} function me(){return room?.players.find(p=>p.id===playerId)} function owner(idx){return room.players.find(p=>p.lands.some(l=>l.idx===idx))}
 function die(n){const on={1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]}[n]||[];return `<i class="die ${rolling?'rolling':''}">${[1,2,3,4,5,6,7,8,9].map(i=>`<span style="visibility:${on.includes(i)?'visible':'hidden'}"></span>`).join('')}</i>`}
-function boardHtml(){const slots=Array(64).fill(''); const indexes=[];for(let i=0;i<8;i++)indexes.push(i);for(let i=1;i<8;i++)indexes.push(i*8+7);for(let i=6;i>=0;i--)indexes.push(56+i);for(let i=6;i>0;i--)indexes.push(i*8);room.board.forEach((s,i)=>{const o=owner(i), people=room.players.filter(p=>p.position===i); slots[indexes[i]]=`<div class="space ${s[1]}" style="--c:${o?.color||'#8ac'}"><b>${esc(s[0])}</b>${s[1]==='chance'?'<span class="space-icon key-icon">🗝️</span>':''}<small>${s[2]?s[2]+' 달란트':esc(s[3])}</small>${o?`<small class="land-owner" style="color:${o.color}">${o.avatar||'★'} ${o.lands.find(l=>l.idx===i)?.buildings?'🏠'.repeat(o.lands.find(l=>l.idx===i).buildings):''}</small>`:''}<div>${people.map(p=>`<i class="token" title="${esc(p.name)}" style="background:${p.color}">${p.avatar||''}</i>`).join('')}</div></div>`});const heroClass=sessionStorage.getItem('talentHeroesSeen')?'':' hero-enter';sessionStorage.setItem('talentHeroesSeen','1');const town=`<div class="center-scene"><span class="cloud c1">☁️</span><span class="cloud c2">☁️</span><span class="star s1">✦</span><span class="star s2">✦</span><div class="town-sign"><small>말씀을 따라 떠나는</small><strong>달란트 타운</strong><em>♟ 함께 즐기는 믿음의 보드게임 ♟</em></div><div class="hills">⛰️ <span>🌳</span> <span>⛪</span> <span>🌳</span> ⛰️</div><div class="mascots"><img class="${heroClass}" src="/assets/bible-heroes.png" alt="달란트 타운 탐험대"></div></div>`;return town+slots.map(x=>x||'<div class="space"></div>').join('')}
+function boardHtml(){const slots=Array(64).fill(''); const indexes=[];for(let i=0;i<8;i++)indexes.push(i);for(let i=1;i<8;i++)indexes.push(i*8+7);for(let i=6;i>=0;i--)indexes.push(56+i);for(let i=6;i>0;i--)indexes.push(i*8);room.board.forEach((s,i)=>{const o=owner(i), people=room.players.filter(p=>p.position===i); slots[indexes[i]]=`<div class="space ${s[1]}" style="--c:${o?.color||'#8ac'}" onclick="showSpaceInfo(${i})"><b>${esc(s[0])}</b>${s[1]==='chance'?'<span class="space-icon key-icon">🗝️</span>':''}<small>${s[2]?s[2]+' 달란트':esc(s[3])}</small>${o?`<small class="land-owner" style="color:${o.color}">${o.avatar||'★'} ${o.lands.find(l=>l.idx===i)?.buildings?'🏠'.repeat(o.lands.find(l=>l.idx===i).buildings):''}</small>`:''}<div>${people.map(p=>`<i class="token" title="${esc(p.name)}" style="background:${p.color}">${p.avatar||''}</i>`).join('')}</div></div>`});const heroClass=sessionStorage.getItem('talentHeroesSeen')?'':' hero-enter';sessionStorage.setItem('talentHeroesSeen','1');const town=`<div class="center-scene"><span class="cloud c1">☁️</span><span class="cloud c2">☁️</span><span class="star s1">✦</span><span class="star s2">✦</span><div class="town-sign"><small>말씀을 따라 떠나는</small><strong>달란트 타운</strong><em>♟ 함께 즐기는 믿음의 보드게임 ♟</em></div><div class="hills">⛰️ <span>🌳</span> <span>⛪</span> <span>🌳</span> ⛰️</div><div class="mascots"><img class="${heroClass}" src="/assets/bible-heroes.png" alt="달란트 타운 탐험대"></div></div>`;return town+slots.map(x=>x||'<div class="space"></div>').join('')}
+
+window.showSpaceInfo=function(idx){
+  if(!room?.board?.[idx]) return;
+  const s=room.board[idx];
+  const edu=s[4]||'';
+  const [icon,title,desc,fact]=edu.split('|');
+  const o=owner(idx);
+  const land=o?.lands?.find(l=>l.idx===idx);
+  const ownerInfo=o?`<div class="info-owner" style="border-color:${o.color}"><span>${o.avatar||'★'}</span> <b>${esc(o.name)}</b> 팀 소유${'🏠'.repeat(land?.buildings||0)}</div>`:'';
+  const pop=document.createElement('div');
+  pop.className='modal space-info-pop';
+  pop.innerHTML=`<div class="card space-info-card">
+    <div class="info-icon">${icon||'📌'}</div>
+    <h2 class="info-title">${esc(title||s[0])}</h2>
+    ${ownerInfo}
+    <p class="info-desc">${esc(desc||s[3])}</p>
+    ${fact?`<div class="info-fact"><span>💡 재미있는 사실</span><p>${esc(fact)}</p></div>`:''}
+    <button onclick="this.closest('.space-info-pop').remove()">닫기</button>
+  </div>`;
+  pop.addEventListener('click',e=>{if(e.target===pop)pop.remove();});
+  document.body.appendChild(pop);
+};
 
 function lobbyHtml(mine,cur) {
   const joinUrl=`${location.origin}/?join=${room.id}`;
