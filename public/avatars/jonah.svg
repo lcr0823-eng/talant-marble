@@ -1,45 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
-  <!-- 배경 (바다색) -->
-  <circle cx="40" cy="40" r="40" fill="#A8E4FF"/>
-  <!-- 물고기 -->
-  <ellipse cx="18" cy="60" rx="14" ry="9" fill="#4488CC"/>
-  <polygon points="4,54 2,60 4,66" fill="#3366AA"/>
-  <circle cx="24" cy="57" r="2" fill="white"/>
-  <circle cx="24.5" cy="57" r="1" fill="#1a3a6a"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="50" fill="#88CCFF"/>
   <!-- 물결 -->
-  <path d="M2 52 Q15 46 28 52 Q41 58 54 52 Q67 46 78 52" stroke="#66BBFF" stroke-width="2" fill="none" opacity="0.6"/>
-  <path d="M2 58 Q15 52 28 58 Q41 64 54 58 Q67 52 78 58" stroke="#66BBFF" stroke-width="2" fill="none" opacity="0.4"/>
-  <!-- 머리카락 -->
-  <ellipse cx="40" cy="24" rx="16" ry="12" fill="#6B3A1F"/>
-  <!-- 머리카락 뒤쪽 삐죽 (놀란 모양) -->
-  <path d="M34 14 L32 5 L37 13" fill="#6B3A1F"/>
-  <path d="M40 12 L40 3 L43 12" fill="#6B3A1F"/>
-  <path d="M46 14 L48 5 L44 13" fill="#6B3A1F"/>
+  <path d="M0 72 Q25 62 50 72 Q75 82 100 72 L100 100 L0 100Z" fill="#2266AA" opacity="0.5"/>
+  <path d="M0 80 Q25 70 50 80 Q75 90 100 80 L100 100 L0 100Z" fill="#1144AA" opacity="0.6"/>
+  <!-- 큰 물고기 -->
+  <ellipse cx="22" cy="75" rx="18" ry="11" fill="#3366CC"/>
+  <polygon points="4,68 0,75 4,82" fill="#2255BB"/>
+  <circle cx="28" cy="72" r="3" fill="white"/>
+  <circle cx="28.5" cy="72" r="1.5" fill="#1a3a6a"/>
+  <path d="M16 72 Q22 68 28 72" stroke="#5588EE" stroke-width="2" fill="none"/>
+  <!-- 머리 -->
+  <ellipse cx="50" cy="34" rx="20" ry="14" fill="#7B4A1F"/>
+  <!-- 삐죽 머리 (놀람) -->
+  <polygon points="35,24 31,10 39,22" fill="#7B4A1F"/>
+  <polygon points="50,22 50,8 53,22" fill="#7B4A1F"/>
+  <polygon points="65,24 69,10 61,22" fill="#7B4A1F"/>
   <!-- 얼굴 -->
-  <ellipse cx="40" cy="38" rx="15" ry="17" fill="#F5C590"/>
-  <!-- 귀 -->
-  <ellipse cx="25" cy="38" rx="4" ry="5" fill="#F5C590"/>
-  <ellipse cx="55" cy="38" rx="4" ry="5" fill="#F5C590"/>
-  <!-- 눈썹 (놀란 모양 - 올라감) -->
-  <path d="M28 28 Q32 22 36 26" stroke="#6B3A1F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <path d="M44 26 Q48 22 52 28" stroke="#6B3A1F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <!-- 눈 (크게 뜸 - 놀람) -->
-  <ellipse cx="33" cy="33" rx="5.5" ry="6" fill="white"/>
-  <ellipse cx="47" cy="33" rx="5.5" ry="6" fill="white"/>
-  <circle cx="34" cy="34" r="3.5" fill="#3a2010"/>
-  <circle cx="48" cy="34" r="3.5" fill="#3a2010"/>
-  <circle cx="35" cy="33" r="1.5" fill="white"/>
-  <circle cx="49" cy="33" r="1.5" fill="white"/>
-  <!-- 볼터치 -->
-  <ellipse cx="25" cy="41" rx="4.5" ry="3" fill="#FFAAAA" opacity="0.5"/>
-  <ellipse cx="55" cy="41" rx="4.5" ry="3" fill="#FFAAAA" opacity="0.5"/>
-  <!-- 코 -->
-  <ellipse cx="40" cy="42" rx="2.5" ry="2" fill="#d09060"/>
-  <!-- 입 (O모양 - 놀람) -->
-  <ellipse cx="40" cy="50" rx="5" ry="6" fill="#CC5533" stroke="#8B2200" stroke-width="1.5"/>
-  <ellipse cx="40" cy="50" rx="3.5" ry="4.5" fill="#1a0000"/>
-  <!-- 땀방울 -->
-  <path d="M58 22 Q60 18 62 22 Q62 26 60 27 Q58 26 58 22" fill="#88CCFF"/>
-  <!-- 이름 -->
-  <text x="40" y="77" text-anchor="middle" font-family="'Malgun Gothic',sans-serif" font-size="9" font-weight="bold" fill="#1a3a6a">요 나</text>
+  <circle cx="50" cy="54" r="22" fill="#F5C590"/>
+  <!-- 눈썹 (놀람 - 위로 올라감) -->
+  <path d="M36 44 Q42 36 47 42" stroke="#7B4A1F" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M53 42 Q58 36 64 44" stroke="#7B4A1F" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- 눈 (크게 뜸) -->
+  <circle cx="42" cy="51" r="6.5" fill="white"/>
+  <circle cx="58" cy="51" r="6.5" fill="white"/>
+  <circle cx="43" cy="52" r="4" fill="#3a2010"/>
+  <circle cx="59" cy="52" r="4" fill="#3a2010"/>
+  <circle cx="44.5" cy="51" r="1.6" fill="white"/>
+  <circle cx="60.5" cy="51" r="1.6" fill="white"/>
+  <!-- 볼 -->
+  <circle cx="33" cy="60" r="5" fill="#FFAAAA" opacity="0.5"/>
+  <circle cx="67" cy="60" r="5" fill="#FFAAAA" opacity="0.5"/>
+  <!-- 입 (O - 놀람) -->
+  <ellipse cx="50" cy="65" rx="6" ry="7" fill="#CC4422" stroke="#8B1A00" stroke-width="2"/>
+  <ellipse cx="50" cy="65" rx="4" ry="5" fill="#1a0000"/>
+  <!-- 땀 -->
+  <ellipse cx="72" cy="38" rx="3" ry="5" fill="#88CCFF"/>
+  <circle cx="72" cy="34" r="2.5" fill="#88CCFF"/>
 </svg>

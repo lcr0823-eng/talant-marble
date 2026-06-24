@@ -1,35 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
-  <!-- 배경 -->
-  <circle cx="40" cy="40" r="40" fill="#FFE066"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="50" fill="#FFE066"/>
   <!-- 왕관 -->
-  <polygon points="20,30 26,16 32,24 40,12 48,24 54,16 60,30" fill="#FFD700" stroke="#E8A000" stroke-width="1.5"/>
-  <circle cx="40" cy="14" r="3" fill="#FF6060"/>
-  <circle cx="26" cy="18" r="2" fill="#60AAFF"/>
-  <circle cx="54" cy="18" r="2" fill="#60AAFF"/>
-  <!-- 머리카락 -->
-  <ellipse cx="40" cy="32" rx="19" ry="10" fill="#8B4513"/>
+  <polygon points="22,42 30,22 38,34 50,18 62,34 70,22 78,42" fill="#FFD700" stroke="#CC9900" stroke-width="2"/>
+  <circle cx="50" cy="20" r="5" fill="#FF4466"/>
+  <circle cx="30" cy="24" r="3.5" fill="#4488FF"/>
+  <circle cx="70" cy="24" r="3.5" fill="#4488FF"/>
   <!-- 얼굴 -->
-  <ellipse cx="40" cy="46" rx="17" ry="19" fill="#F5C5A3"/>
-  <!-- 귀 -->
-  <ellipse cx="23" cy="46" rx="4" ry="5" fill="#F5C5A3"/>
-  <ellipse cx="57" cy="46" rx="4" ry="5" fill="#F5C5A3"/>
-  <!-- 눈썹 -->
-  <path d="M29 39 Q33 36 37 39" stroke="#8B4513" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-  <path d="M43 39 Q47 36 51 39" stroke="#8B4513" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <circle cx="50" cy="62" r="24" fill="#FBBF8C"/>
+  <!-- 머리카락 -->
+  <ellipse cx="50" cy="42" rx="20" ry="11" fill="#8B4513"/>
   <!-- 눈 -->
-  <ellipse cx="33" cy="43" rx="4" ry="4.5" fill="white"/>
-  <ellipse cx="47" cy="43" rx="4" ry="4.5" fill="white"/>
-  <circle cx="34" cy="44" r="2.5" fill="#5c3317"/>
-  <circle cx="48" cy="44" r="2.5" fill="#5c3317"/>
-  <circle cx="35" cy="43" r="1" fill="white"/>
-  <circle cx="49" cy="43" r="1" fill="white"/>
-  <!-- 볼터치 -->
-  <ellipse cx="26" cy="50" rx="5" ry="3" fill="#FFAAAA" opacity="0.5"/>
-  <ellipse cx="54" cy="50" rx="5" ry="3" fill="#FFAAAA" opacity="0.5"/>
-  <!-- 코 -->
-  <ellipse cx="40" cy="50" rx="2" ry="1.5" fill="#e0a080"/>
+  <circle cx="42" cy="60" r="4.5" fill="white"/>
+  <circle cx="58" cy="60" r="4.5" fill="white"/>
+  <circle cx="43" cy="61" r="2.5" fill="#3a2010"/>
+  <circle cx="59" cy="61" r="2.5" fill="#3a2010"/>
+  <circle cx="44" cy="60" r="1" fill="white"/>
+  <circle cx="60" cy="60" r="1" fill="white"/>
+  <!-- 볼 -->
+  <circle cx="34" cy="68" r="5" fill="#FFB0A0" opacity="0.6"/>
+  <circle cx="66" cy="68" r="5" fill="#FFB0A0" opacity="0.6"/>
   <!-- 입 -->
-  <path d="M33 56 Q40 62 47 56" stroke="#CC7755" stroke-width="2" fill="#FF9988" stroke-linecap="round"/>
-  <!-- 이름 -->
-  <text x="40" y="77" text-anchor="middle" font-family="'Malgun Gothic',sans-serif" font-size="9" font-weight="bold" fill="#5a2a00">다 윗</text>
+  <path d="M42 72 Q50 80 58 72" stroke="#CC5533" stroke-width="3" fill="none" stroke-linecap="round"/>
 </svg>
