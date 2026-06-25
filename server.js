@@ -5,14 +5,38 @@ const crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
-const MIME = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8', '.js':'application/javascript; charset=utf-8', '.json':'application/json; charset=utf-8' };
+const SAVE_FILE = path.join(__dirname, 'rooms.json');
+const MIME = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8', '.js':'application/javascript; charset=utf-8', '.json':'application/json; charset=utf-8', '.svg':'image/svg+xml', '.png':'image/png' };
+
+// ── 영구 저장 ───────────────────────────────────────────────────────────────
+function saveRooms() {
+  try {
+    fs.writeFileSync(SAVE_FILE, JSON.stringify([...rooms.entries()], null, 2));
+  } catch(e) { console.error('저장 실패:', e.message); }
+}
+function loadRooms() {
+  try {
+    if (!fs.existsSync(SAVE_FILE)) return;
+    const data = JSON.parse(fs.readFileSync(SAVE_FILE, 'utf8'));
+    for (const [id, room] of data) {
+      if (room.endsAt && room.endsAt < Date.now() && !room.finished) {
+        room.finished = true;
+        room.winner = [...room.players].sort((a,b) => (b.money + b.lands.length*20) - (a.money + a.lands.length*20))[0]?.id;
+        if (!room.log) room.log = [];
+        room.log.unshift({ message: '⏱ 시간 초과로 게임이 종료됐습니다.', time: new Date().toLocaleTimeString('ko-KR') });
+        room.log = room.log.slice(0, 20);
+      }
+      rooms.set(id, room);
+    }
+    console.log(`[복구] ${rooms.size}개 방 불러옴`);
+  } catch(e) { console.error('복구 실패:', e.message); }
+}
+process.on('SIGINT',  () => { saveRooms(); process.exit(0); });
+process.on('SIGTERM', () => { saveRooms(); process.exit(0); });
 
 // board: [이름, 타입, 가격, 짧은설명, 교육정보(이모지|제목|내용|재미있는사실), 색상그룹]
-// 색상그룹(land only): brown, cyan, pink, orange, red, yellow, green, blue, purple
 const board = [
-  // ── 꼭짓점 0: 출발 (top-left) ───────────────────────────────
   ['출발','start',0,'한 바퀴 돌면 20달란트!','🏁|출발!|보드를 한 바퀴 돌 때마다 20달란트를 받아요.|성경에서도 "달란트"는 실제 돈의 단위였어요. 1달란트는 노동자 20년치 임금이에요!'],
-  // ── 윗줄 1-8 ────────────────────────────────────────────────
   ['노아','land',20,'당대에 완전한 의인','🚢|노아|하나님 말씀에 순종해 방주를 만들어 홍수에서 가족과 모든 동물을 구한 믿음의 사람이에요.|방주의 크기는 약 135m! 노아는 40일 밤낮 비가 내리는 동안 방주 안에 있었어요. 🌈','brown'],
   ['모세','land',20,'출애굽의 지도자','✋|모세|하나님의 명령을 받아 이스라엘 백성을 이집트 노예 생활에서 이끌어낸 위대한 지도자예요.|모세는 홍해를 갈라 바다 한가운데로 길을 만들었어요! 시내산에서 십계명을 받았어요. ⛰️','brown'],
   ['황금열쇠','chance',0,'예상하지 못한 은혜의 카드','🗝️|황금열쇠|어떤 카드가 나올지 두근두근!|예수님이 베드로에게 "천국 열쇠"를 주셨다고 했어요! (마태복음 16:19)'],
@@ -21,9 +45,7 @@ const board = [
   ['요나','land',30,'물고기 뱃속의 선지자','🐋|요나|하나님의 명령을 피해 도망쳤다가 큰 물고기 뱃속에 3일간 있었어요!|요나는 뉘우치고 말씀을 전했어요. 예수님도 "요나의 표적"을 언급하셨어요. 🌊','cyan'],
   ['광야','desert',0,'한 번 쉽니다.','🏜️|광야|이스라엘 백성은 40년을 광야에서 보냈어요.|광야에서도 하나님은 만나와 물을 주셨어요! ☁️'],
   ['베들레헴','land',40,'예수님이 태어나신 곳','⭐|베들레헴|히브리어로 "빵집"이라는 뜻이에요. 작은 마을에서 예수님이 태어나셨어요.|동방박사 세 명이 별을 보고 찾아왔어요. 예수님은 말구유에 태어나셨어요! 🐑','pink'],
-  // ── 꼭짓점 9: 광야 감옥 (top-right) ─────────────────────────
   ['감옥 방문','jail',0,'면회만 합니다.','⛓️|감옥 방문|광야 감옥을 구경 중이에요. 효과 없음!|바울과 실라는 감옥에서 찬양을 불렀어요. 지진이 일어나 문이 열렸어요! 🎵'],
-  // ── 오른쪽 줄 10-17 ─────────────────────────────────────────
   ['나사렛','land',40,'예수님이 자라신 곳','🏠|나사렛|예수님이 어린 시절을 보내신 갈릴리 지방의 마을이에요.|"나사렛에서 무슨 선한 것이 날 수 있겠느냐?" 했지만 예수님이 나오셨어요! (요한복음 1:46)','pink'],
   ['예루살렘','land',50,'거룩한 성','🏛️|예루살렘|히브리어로 "평화의 도시"라는 뜻이에요. 예수님이 십자가를 지신 곳이에요.|예루살렘은 3대 종교의 성지예요. 솔로몬이 이곳에 성전을 세웠어요. ✝️','pink'],
   ['황금열쇠','chance',0,'예상하지 못한 은혜의 카드','🗝️|황금열쇠|어떤 카드가 나올지 두근두근!|예수님이 베드로에게 "천국 열쇠"를 주셨다고 했어요! (마태복음 16:19)'],
@@ -32,9 +54,7 @@ const board = [
   ['에스더','land',70,'민족을 구한 왕비','👸|에스더|유대인 고아 소녀가 왕비가 되어 민족을 학살 위기에서 구해냈어요!|에스더의 고백: "죽으면 죽으리이다!" (에스더 4:16) 하나님이 예비하신 때와 장소가 있어요. 🌹','orange'],
   ['성경 퀴즈','quiz',0,'함께 말씀을 기억해요','📖|성경 퀴즈|정답을 맞히면 10달란트와 공동 별⭐을 획득해요!|성경은 66권, 약 40명의 저자가 1,500년에 걸쳐 기록했어요. 세계에서 가장 많이 팔린 책! 📚'],
   ['골고다','land',70,'예수님이 십자가에 못 박히신 곳','✝️|골고다|히브리어로 "해골 곳". 예수님이 우리 죄를 위해 십자가를 지신 곳이에요.|예수님은 우리 대신 돌아가셨고, 3일 만에 부활하셨어요! 기독교 신앙의 핵심이에요. ❤️','red'],
-  // ── 꼭짓점 18: 세계여행 (bottom-right) ───────────────────────
   ['세계여행','travel',0,'50달란트로 원하는 땅으로 이동','✈️|세계여행|50달란트를 내고 보드 위 어느 땅으로든 이동할 수 있어요!|바울은 세 번의 선교 여행으로 약 2만 km를 여행하며 복음을 전했어요. 🗺️'],
-  // ── 아랫줄 19-26 (오른쪽→왼쪽) ─────────────────────────────
   ['가나안','land',80,'젖과 꿀이 흐르는 땅','🍯|가나안|하나님이 약속하신 땅이에요. 이스라엘 백성이 40년 광야 생활 끝에 들어간 곳이에요.|"젖과 꿀이 흐른다"는 것은 매우 풍요롭다는 표현이에요. 오늘날 이스라엘 지역이에요! 🌻','red'],
   ['부활','land',80,'예수님이 죽음을 이기신 사건','🌅|부활|예수님이 십자가에서 죽으시고 사흘 만에 다시 살아나신 것이 기독교의 핵심이에요!|예수님의 부활은 500명 이상의 목격자가 있어요. (고린도전서 15:6) 부활은 우리 소망이에요! 🕊️','red'],
   ['황금열쇠','chance',0,'예상하지 못한 은혜의 카드','🗝️|황금열쇠|어떤 카드가 나올지 두근두근!|예수님이 베드로에게 "천국 열쇠"를 주셨다고 했어요! (마태복음 16:19)'],
@@ -43,9 +63,7 @@ const board = [
   ['임마누엘','land',100,'하나님이 함께하심','🤗|임마누엘|히브리어로 "하나님이 우리와 함께 계신다"는 뜻이에요. 예수님을 부르는 또 다른 이름이에요.|이사야가 700년 전 예언했어요: "처녀가 잉태하여 아들을 낳을 것이요..." (이사야 7:14) ✨','yellow'],
   ['성경 퀴즈','quiz',0,'함께 말씀을 기억해요','📖|성경 퀴즈|정답을 맞히면 10달란트와 공동 별⭐을 획득해요!|성경은 66권! 구약 39권, 신약 27권이에요. 📚'],
   ['여호와 샬롬','land',110,'하나님의 평화','☮️|여호와 샬롬|"하나님은 평화이시다"라는 뜻이에요. 기드온이 하나님 천사를 만난 곳에 세운 제단 이름이에요.|"샬롬"은 완전함, 번영, 행복을 모두 포함한 풍성한 평화예요. 이스라엘 사람들은 지금도 "샬롬!"이라고 인사해요. 🕊️','green'],
-  // ── 꼭짓점 27: 안식 (bottom-left) ────────────────────────────
   ['안식','rest',0,'10달란트를 받습니다!','😌|안식|잠깐 쉬면서 하나님의 선물을 받아요! 10달란트를 받습니다.|"수고하고 무거운 짐 진 자들아 다 내게로 오라 내가 너희를 쉬게 하리라" (마태복음 11:28)'],
-  // ── 왼쪽 줄 28-35 (아래→위) ─────────────────────────────────
   ['여호와 이레','land',110,'여호와께서 준비하심','🐑|여호와 이레|하나님이 미리 준비해 주신다는 뜻이에요.|아브라함이 이삭을 제물로 드리려 할 때 하나님이 양을 준비해 주셨어요. "그 풍성한 대로 너희 모든 쓸 것을 채우시리라" (빌 4:19)','green'],
   ['아멘','land',120,'네, 그렇습니다','🙏|아멘|히브리어로 "진실하다, 그렇습니다!"라는 뜻이에요.|예수님도 "아멘 아멘 내가 너희에게 이르노니"라고 자주 말씀하셨어요. 기도 끝에 아멘은 "정말 그렇게 되길 원해요!"라는 고백이에요. 💫','green'],
   ['황금열쇠','chance',0,'예상하지 못한 은혜의 카드','🗝️|황금열쇠|어떤 카드가 나올지 두근두근!|예수님이 베드로에게 "천국 열쇠"를 주셨다고 했어요! (마태복음 16:19)'],
@@ -94,7 +112,14 @@ const chanceCards = [
   ['말씀의 능력', '모든 팀이 공동 별표를 하나 획득합니다. 5달란트를 받습니다.', p => p.money += 5],
 ];
 
-const miniGames = ['팀원 전원이 다윗의 수금을 연주하는 모습을 5초 동안 표현하세요.', '성경 인물 한 명을 몸으로 표현하고 팀원이 맞혀 보세요.', '함께 하나님은 사랑이시라를 큰 소리로 외쳐 보세요.', '팀원 모두가 서로에게 축복의 한마디를 해 주세요.', '아는 찬양 한 소절을 함께 불러 보세요.', '다 같이 성경책 한 구절을 외워 보세요.'];
+const miniGames = [
+  '팀원 전원이 다윗의 수금을 연주하는 모습을 5초 동안 표현하세요.',
+  '성경 인물 한 명을 몸으로 표현하고 팀원이 맞혀 보세요.',
+  '함께 하나님은 사랑이시라를 큰 소리로 외쳐 보세요.',
+  '팀원 모두가 서로에게 축복의 한마디를 해 주세요.',
+  '아는 찬양 한 소절을 함께 불러 보세요.',
+  '다 같이 성경책 한 구절을 외워 보세요.',
+];
 
 function code() { return crypto.randomBytes(3).toString('hex').toUpperCase(); }
 function roomData(room) { return { ...room, board, serverTime: Date.now() }; }
@@ -114,7 +139,6 @@ function newRoom(hostName, mode='online', count=1, avatar='🦁', startMoney=60)
 function nextTurn(room) {
   const n = room.players.length;
   let next = (room.turn + 1) % n;
-  // 파산 플레이어 건너뜀
   let safety = 0;
   while(room.players[next]?.bankrupt && safety++ < n) next = (next+1) % n;
   room.turn = next;
@@ -122,7 +146,6 @@ function nextTurn(room) {
 function checkBankruptcy(room, player) {
   if(player.money <= 0 && !player.bankrupt) {
     player.money = 0; player.bankrupt = true;
-    // 땅/건물 모두 몰수
     player.lands = []; player.jailTurns = 0;
     log(room, `💸 ${player.name} 팀이 파산했습니다! 모든 땅이 몰수됩니다.`);
     const active = room.players.filter(p => !p.bankrupt);
@@ -156,10 +179,8 @@ function action(room, player, type, body) {
     if (player.bankrupt) { nextTurn(room); return; }
     const a = 1 + Math.floor(Math.random()*6), b = 1 + Math.floor(Math.random()*6); const steps=a+b;
     player.lastRoll=[a,b];
-    // ── 감옥 처리 ──────────────────────────────────────────────
     if (player.jailTurns > 0) {
       if (a === b) {
-        // 더블! 감옥 탈출 후 이동
         player.jailTurns = 0;
         log(room, `🎉 ${player.name} 팀이 더블(${a}+${b})로 감옥을 탈출했습니다!`);
         const before=player.position; player.position=(9+steps)%board.length;
@@ -176,13 +197,11 @@ function action(room, player, type, body) {
       }
       player.canAct=true; if(a===b) player.bonus=true; return;
     }
-    // ── 일반 이동 ───────────────────────────────────────────────
     const before=player.position; player.position=(before+steps)%board.length;
     if(player.position < before) { player.money += 20; log(room, `${player.name} 팀이 출발지를 지나 20달란트를 받았습니다.`); }
     const space=board[player.position]; log(room, `${player.name} 팀이 주사위 ${a}+${b}=${steps}, ${space[0]}에 도착했습니다.`);
     player.canAct=true;
     if (space[1] === 'desert') {
-      // 광야 → 감옥 이동
       player.position = 9; player.jailTurns = 3;
       log(room, `🔒 ${player.name} 팀이 광야를 지나 감옥에 갇혔습니다! (더블 or 보석금 10달란트로 탈출)`);
       player.canAct=false; nextTurn(room); return;
@@ -195,7 +214,6 @@ function action(room, player, type, body) {
   } else if (type === 'build') {
     const idx=player.position, space=board[idx];
     const land=player.lands.find(l=>l.idx===idx); if(!land || land.buildings>=4) throw Error('이 땅에는 더 지을 수 없습니다.');
-    // 그룹 소유 체크
     const myGroup=space[5];
     if(myGroup){const groupIdxs=board.reduce((acc,s,i)=>s[1]==='land'&&s[5]===myGroup?[...acc,i]:acc,[]);const allOwned=groupIdxs.every(i=>player.lands.some(l=>l.idx===i));if(!allOwned){const missing=groupIdxs.filter(i=>!player.lands.some(l=>l.idx===i)).map(i=>board[i][0]);throw Error(`같은 그룹 땅(${missing.join(', ')})을 모두 가져야 건설할 수 있어요!`);}}
     const buildCosts=[Math.round(space[2]*0.5),Math.round(space[2]*0.75),Math.round(space[2]*1),Math.round(space[2]*1.5)];
@@ -208,7 +226,6 @@ function action(room, player, type, body) {
     else {
       const land=lowner.lands.find(l=>l.idx===idx);
       const feeRates=[0.1,0.2,0.4,0.7,1.2];
-      // 독점 보너스: 그룹 전부 소유 + 건물 없을 때 기본 통행료 2배
       let monopoly=1;
       if(land.buildings===0 && space[5]) {
         const gi=board.reduce((a,s,i)=>s[1]==='land'&&s[5]===space[5]?[...a,i]:a,[]);
@@ -274,21 +291,134 @@ function action(room, player, type, body) {
 }
 
 function send(res, status, data) { res.writeHead(status, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Access-Control-Allow-Origin':'*'}); res.end(JSON.stringify(data)); }
+
 const server=http.createServer((req,res)=>{
   const url=new URL(req.url, `http://${req.headers.host}`);
-  if(req.method==='GET' && url.pathname==='/api/room') { const r=rooms.get(url.searchParams.get('id')); return r?send(res,200,roomData(r)):send(res,404,{error:'방을 찾을 수 없습니다.'}); }
-  if(req.method==='POST' && url.pathname.startsWith('/api/')) { let raw=''; req.on('data',d=>raw+=d); req.on('end',()=>{ try { const body=raw?JSON.parse(raw):{};
-    if(url.pathname==='/api/create'){ const r=newRoom(body.name, body.mode, body.count, body.avatar, body.startMoney); if(body.duration) r.duration=Math.max(5,Math.min(60,Number(body.duration))); if(body.avatarSrc) r.players[0].avatarSrc=body.avatarSrc; return send(res,200,{room:roomData(r),playerId:r.hostId}); }
-    const r=rooms.get(body.roomId); if(!r) return send(res,404,{error:'방을 찾을 수 없습니다.'});
-    if(url.pathname==='/api/join'){ if(r.started) throw Error('이미 시작된 게임입니다.'); if(r.players.length>=6) throw Error('방이 가득 찼습니다.'); const p={id:crypto.randomUUID(),name:(body.name||'참여자').slice(0,12),avatar:body.avatar||'david',avatarSrc:body.avatarSrc||'',money:r.players[0]?.money||60,position:0,lands:[],items:[],jailTurns:0,bankrupt:false,color:['#3d5a80','#2a9d8f','#e9c46a','#9b5de5','#e76f51'][r.players.length-1],quizWins:0}; r.players.push(p); log(r,`${p.name} 팀이 참여했습니다.`); return send(res,200,{room:roomData(r),playerId:p.id}); }
-    if(url.pathname==='/api/start'){ if(body.playerId!==r.hostId) throw Error('방장만 시작할 수 있습니다.'); if(r.mode==='online' && r.players.length<2) throw Error('두 팀 이상 참여해야 합니다.'); r.started=true; r.endsAt=Date.now()+r.duration*60000; log(r,'게임을 시작합니다!'); return send(res,200,roomData(r)); }
-    if(url.pathname==='/api/finish'){ if(body.playerId!==r.hostId) throw Error('방장만 종료할 수 있습니다.'); r.finished=true; r.winner=[...r.players].sort((a,b)=>(b.money+b.lands.length*20)-(a.money+a.lands.length*20))[0]?.id; log(r,'게임을 마치고 시상식을 시작합니다.'); return send(res,200,roomData(r)); }
-    if(url.pathname==='/api/pause'){ if(body.playerId!==r.hostId) throw Error('방장만 가능합니다.'); r.paused=!r.paused; log(r, r.paused?'⏸ 게임이 일시 정지됐습니다.':'▶️ 게임이 재개됐습니다.'); return send(res,200,roomData(r)); }
-    if(url.pathname==='/api/adjustScore'){ const tp=r.players.find(p=>p.id===body.playerId); if(!tp) throw Error('플레이어를 찾을 수 없습니다.'); const amt=Math.max(-tp.money, Math.min(200, Number(body.amount)||0)); tp.money=Math.max(0,tp.money+amt); log(r,`교사가 ${tp.name} 팀의 달란트를 ${amt>=0?'+':''}${amt} 조정했습니다.`); return send(res,200,roomData(r)); }
-    if(url.pathname==='/api/action'){ const p=r.tabletop && body.playerId===r.hostId ? active(r) : getPlayer(r,body.playerId); if(!p) throw Error('참여자를 찾을 수 없습니다.'); action(r,p,body.type,body); return send(res,200,roomData(r)); }
-    return send(res,404,{error:'요청을 찾을 수 없습니다.'});
-  } catch(e){ send(res,400,{error:e.message}); }}); return; }
-  let file=url.pathname==='/' ? '/index.html' : url.pathname; file=path.normalize(path.join(__dirname,'public',file)); if(!file.startsWith(path.join(__dirname,'public'))) return send(res,403,{error:'금지됨'});
-  fs.readFile(file,(err,data)=>{if(err){res.writeHead(404);return res.end('Not found');}res.writeHead(200,{'Content-Type':MIME[path.extname(file)]||'application/octet-stream'});res.end(data);});
+
+  // ── GET /api/room ──────────────────────────────────────────────
+  if(req.method==='GET' && url.pathname==='/api/room') {
+    const r=rooms.get(url.searchParams.get('id'));
+    return r ? send(res,200,roomData(r)) : send(res,404,{error:'방을 찾을 수 없습니다.'});
+  }
+
+  // ── POST /api/* ─────────────────────────────────────────────────
+  if(req.method==='POST' && url.pathname.startsWith('/api/')) {
+    let raw=''; req.on('data',d=>raw+=d); req.on('end',()=>{ try {
+      const body=raw?JSON.parse(raw):{};
+
+      // 방 만들기
+      if(url.pathname==='/api/create'){
+        const r=newRoom(body.name, body.mode, body.count, body.avatar, body.startMoney);
+        if(body.duration) r.duration=Math.max(5,Math.min(60,Number(body.duration)));
+        if(body.avatarSrc) r.players[0].avatarSrc=body.avatarSrc;
+        saveRooms();
+        return send(res,200,{room:roomData(r),playerId:r.hostId});
+      }
+
+      // 이후 모든 엔드포인트는 방 ID 필요
+      const r=rooms.get(body.roomId); if(!r) return send(res,404,{error:'방을 찾을 수 없습니다.'});
+
+      if(url.pathname==='/api/join'){
+        if(r.started) throw Error('이미 시작된 게임입니다.');
+        if(r.players.length>=6) throw Error('방이 가득 찼습니다.');
+        const p={id:crypto.randomUUID(),name:(body.name||'참여자').slice(0,12),avatar:body.avatar||'david',avatarSrc:body.avatarSrc||'',money:r.players[0]?.money||60,position:0,lands:[],items:[],jailTurns:0,bankrupt:false,color:['#3d5a80','#2a9d8f','#e9c46a','#9b5de5','#e76f51'][r.players.length-1],quizWins:0};
+        r.players.push(p); log(r,`${p.name} 팀이 참여했습니다.`);
+        saveRooms();
+        return send(res,200,{room:roomData(r),playerId:p.id});
+      }
+
+      if(url.pathname==='/api/start'){
+        if(body.playerId!==r.hostId) throw Error('방장만 시작할 수 있습니다.');
+        if(r.mode==='online' && r.players.length<2) throw Error('두 팀 이상 참여해야 합니다.');
+        r.started=true; r.endsAt=Date.now()+r.duration*60000;
+        log(r,'게임을 시작합니다!');
+        saveRooms();
+        return send(res,200,roomData(r));
+      }
+
+      if(url.pathname==='/api/finish'){
+        if(body.playerId!==r.hostId) throw Error('방장만 종료할 수 있습니다.');
+        r.finished=true; r.winner=[...r.players].sort((a,b)=>(b.money+b.lands.length*20)-(a.money+a.lands.length*20))[0]?.id;
+        log(r,'게임을 마치고 시상식을 시작합니다.');
+        saveRooms();
+        return send(res,200,roomData(r));
+      }
+
+      if(url.pathname==='/api/pause'){
+        if(body.playerId!==r.hostId) throw Error('방장만 가능합니다.');
+        r.paused=!r.paused;
+        log(r, r.paused?'⏸ 게임이 일시 정지됐습니다.':'▶️ 게임이 재개됐습니다.');
+        saveRooms();
+        return send(res,200,roomData(r));
+      }
+
+      if(url.pathname==='/api/adjustScore'){
+        const tp=r.players.find(p=>p.id===body.playerId); if(!tp) throw Error('플레이어를 찾을 수 없습니다.');
+        const amt=Math.max(-tp.money, Math.min(200, Number(body.amount)||0));
+        tp.money=Math.max(0,tp.money+amt);
+        log(r,`교사가 ${tp.name} 팀의 달란트를 ${amt>=0?'+':''}${amt} 조정했습니다.`);
+        saveRooms();
+        return send(res,200,roomData(r));
+      }
+
+      // ── 교사 관리 패널 ─────────────────────────────────────────
+      if(url.pathname==='/api/adminSet'){
+        if(body.playerId!==r.hostId) throw Error('방장만 가능합니다.');
+        // 시간 연장
+        if(body.extendMinutes){
+          const mins=Math.max(1,Math.min(30,Number(body.extendMinutes)||5));
+          r.endsAt=(r.endsAt||Date.now())+mins*60000;
+          r.duration+=mins;
+          log(r,`⏱ 교사가 게임 시간을 ${mins}분 연장했습니다.`);
+        }
+        // 공동 별 목표 변경
+        if(body.starGoal!==undefined){
+          r.sharedGoal=Math.max(1,Math.min(99,Number(body.starGoal)||12));
+          log(r,`⭐ 공동 별 목표가 ${r.sharedGoal}개로 변경됐습니다.`);
+        }
+        // 팀 달란트 보너스 지급
+        if(body.bonusTeamId && body.bonusAmount!==undefined){
+          const target=r.players.find(p=>p.id===body.bonusTeamId);
+          if(target){
+            const amt=Math.max(-target.money, Math.min(500, Number(body.bonusAmount)||0));
+            target.money=Math.max(0,target.money+amt);
+            log(r,`🎁 교사가 ${target.name} 팀에게 ${amt>=0?'+':''}${amt}달란트를 지급했습니다.`);
+          }
+        }
+        // 강제 다음 턴
+        if(body.forceNextTurn){
+          const cur=active(r);
+          if(cur){ cur.canAct=false; cur.card=null; cur.bonus=false; }
+          nextTurn(r); takeBotTurns(r);
+          log(r,'⏭ 교사가 다음 팀으로 턴을 넘겼습니다.');
+        }
+        saveRooms();
+        return send(res,200,roomData(r));
+      }
+
+      if(url.pathname==='/api/action'){
+        const p=r.tabletop && body.playerId===r.hostId ? active(r) : getPlayer(r,body.playerId);
+        if(!p) throw Error('참여자를 찾을 수 없습니다.');
+        action(r,p,body.type,body);
+        saveRooms();
+        return send(res,200,roomData(r));
+      }
+
+      return send(res,404,{error:'요청을 찾을 수 없습니다.'});
+    } catch(e){ send(res,400,{error:e.message}); }}); return;
+  }
+
+  // ── 정적 파일 서빙 ──────────────────────────────────────────────
+  let file=url.pathname==='/' ? '/index.html' : url.pathname;
+  file=path.normalize(path.join(__dirname,'public',file));
+  if(!file.startsWith(path.join(__dirname,'public'))) return send(res,403,{error:'금지됨'});
+  fs.readFile(file,(err,data)=>{
+    if(err){res.writeHead(404);return res.end('Not found');}
+    res.writeHead(200,{'Content-Type':MIME[path.extname(file)]||'application/octet-stream','Cache-Control':'no-cache'});
+    res.end(data);
+  });
 });
-server.listen(PORT, '0.0.0.0', ()=>console.log(`달란트마블 실행 중: http://localhost:${PORT}`));
+
+// 서버 시작 전에 저장된 방 복구
+loadRooms();
+server.listen(PORT, '0.0.0.0', ()=>console.log(`달란트마블 실행 중: http://localhost:${PORT}  (방 ${rooms.size}개 복구됨)`));

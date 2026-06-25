@@ -3,39 +3,46 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>달란트마블 관전</title>
+  <title>달란트마블 관전 (프로젝터)</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="effects.css">
   <style>
-    body{background:radial-gradient(circle at 20% 10%,#fff8d8 0 9%,transparent 10%),radial-gradient(circle at 85% 18%,#c7f0f0 0 8%,transparent 9%),linear-gradient(135deg,#f7eecf,#d9f3ed)}
+    /* ── 프로젝터 모드 오버라이드 ── */
+    body{background:#1a1a2e!important}
     .spec-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;padding:12px;max-width:1440px;margin:auto;height:100vh;box-sizing:border-box}
-    .spec-header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:6px 8px 10px}
-    .spec-header h1{margin:0;color:#e75138;font-size:clamp(24px,3.5vw,40px);text-shadow:0 3px white}
+    .spec-header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:6px 8px 10px;background:linear-gradient(90deg,#e85637,#c0392b);border-radius:14px;color:#fff}
+    .spec-header h1{margin:0;color:#fff;font-size:clamp(24px,3.5vw,40px);text-shadow:0 2px #00000040}
     .spec-hud{display:flex;gap:10px;align-items:center;margin-left:auto}
-    #spec-timer{background:#253c5b;color:#fff8d5;border:3px solid #fff2a9;border-radius:14px;padding:7px 14px;font-size:clamp(18px,2.5vw,28px);font-weight:800;box-shadow:0 4px #17304a}
-    #spec-stars{background:#fff8c8;border:3px solid #f5c430;border-radius:14px;padding:7px 14px;font-size:clamp(14px,2vw,22px);font-weight:800;color:#75431f}
+    #spec-timer{background:#253c5b;color:#ffd700;border:3px solid #fbbf24;border-radius:14px;padding:7px 14px;font-size:clamp(18px,2.5vw,32px);font-weight:900;box-shadow:0 4px #17304a;font-variant-numeric:tabular-nums}
+    #spec-timer.urgent{animation:spec-pulse .8s infinite alternate}
+    @keyframes spec-pulse{to{opacity:.5}}
+    #spec-stars{background:#0f3460;border:3px solid #fbbf24;border-radius:14px;padding:7px 14px;font-size:clamp(14px,2vw,22px);font-weight:800;color:#fbbf24}
     .spec-board-wrap{overflow:auto;display:flex;align-items:center;justify-content:center}
     .spec-board{width:100%;max-height:calc(100vh - 80px);aspect-ratio:1/1;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);gap:4px;padding:9px;background:linear-gradient(135deg,#965426,#6c3517);border:5px solid #fff0b9;border-radius:25px;box-shadow:0 7px 0 #54260f,0 16px 30px #4a2c1960;position:relative}
     .spec-side{display:flex;flex-direction:column;gap:10px;overflow:auto}
-    .score-card{background:#fffdf7;border:4px solid #78431e;padding:12px;border-radius:16px;box-shadow:0 5px 0 #d39354}
-    .score-card h2{margin:0 0 8px;font-size:clamp(14px,1.8vw,20px)}
-    .score-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px dashed #e2cda8;font-size:clamp(13px,1.5vw,17px)}
+    .score-card{background:#0f3460;border:3px solid #2d5a9a;padding:12px;border-radius:16px;color:#e2e8f0}
+    .score-card h2{margin:0 0 8px;font-size:clamp(14px,1.8vw,20px);color:#90cdf4}
+    .score-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #2d4a7a;font-size:clamp(13px,1.5vw,17px)}
     .score-row:last-child{border:none}
     .score-av{font-size:1.6em;line-height:1}
-    .score-bar-wrap{flex:1;background:#f0e5d0;border-radius:8px;height:12px;overflow:hidden}
+    .score-bar-wrap{flex:1;background:#16213e;border-radius:8px;height:12px;overflow:hidden}
     .score-bar{height:100%;border-radius:8px;transition:width .6s ease}
     .score-num{font-weight:800;min-width:60px;text-align:right;font-size:clamp(12px,1.4vw,16px)}
-    .cur-turn{background:#fff9d4;border:3px solid #f5c430;border-radius:12px;padding:8px;text-align:center;font-size:clamp(13px,1.6vw,18px)}
-    .spec-log{background:#fffdf7;border:4px solid #78431e;padding:10px;border-radius:16px;box-shadow:0 5px 0 #d39354;font-family:system-ui,'Malgun Gothic',sans-serif;font-size:clamp(10px,1.2vw,13px);max-height:260px;overflow:auto;flex:1}
-    .spec-log p{padding-bottom:4px;border-bottom:1px dashed #e2cda8;margin:2px 0}
-    .winner-banner{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#22314a99}
-    .winner-card{background:radial-gradient(circle at 50% 16%,#fffde4,#ffd95a 58%,#ffab32);border:5px solid #75431f;border-radius:28px;padding:32px;text-align:center;box-shadow:0 9px 0 #ba6c25,0 22px 38px #35201466;max-width:500px}
-    .winner-card h2{color:#d64c2e;font-size:clamp(28px,5vw,50px);margin:0}
-    .winner-card p{font-size:clamp(16px,2.5vw,26px);font-weight:700}
-    .no-room{max-width:520px;margin:12vh auto;text-align:center;padding:20px}
-    .token{font-size:clamp(12px,1.5vw,18px);display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:2px solid white;box-shadow:0 2px 0 #593728}
+    .adj-btn{padding:2px 7px;border-radius:6px;border:2px solid #4a6fa5;background:#1a3a6e;color:#90cdf4;cursor:pointer;font-size:15px;font-weight:700}
+    .adj-btn:hover{background:#2a5a9e}
+    .cur-turn{background:#0f3460;border:3px solid #fbbf24;border-radius:12px;padding:10px;text-align:center;font-size:clamp(14px,1.8vw,22px);color:#fbbf24;font-weight:800}
+    .spec-log{background:#0f3460;border:3px solid #2d5a9a;padding:10px;border-radius:16px;font-family:system-ui,'Malgun Gothic',sans-serif;font-size:clamp(10px,1.2vw,13px);max-height:260px;overflow:auto;flex:1;color:#e2e8f0}
+    .spec-log p{padding-bottom:4px;border-bottom:1px solid #1e3a6a;margin:2px 0}
+    .spec-log p:first-child{color:#fbbf24;font-weight:700}
+    .winner-banner{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(0,0,0,.8)}
+    .winner-card{background:linear-gradient(135deg,#1a1a2e,#0f3460);border:4px solid #fbbf24;border-radius:28px;padding:40px;text-align:center;box-shadow:0 0 40px rgba(251,191,36,.4);max-width:600px;color:#fff}
+    .winner-card h2{color:#fbbf24;font-size:clamp(28px,5vw,50px);margin:0 0 12px}
+    .winner-card p{font-size:clamp(16px,2.5vw,26px);font-weight:700;margin:6px 0}
+    .no-room{max-width:520px;margin:12vh auto;text-align:center;padding:20px;color:#e2e8f0}
+    .token{font-size:clamp(12px,1.5vw,18px);display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:2px solid white;box-shadow:0 2px 0 #00000040}
     @media(max-width:780px){.spec-wrap{grid-template-columns:1fr}.spec-side{display:none}}
     .land-owner{font-size:.72em;display:block;opacity:.9}
+    .spec-board{background:linear-gradient(135deg,#965426,#6c3517)!important}
   </style>
 </head>
 <body>
@@ -90,6 +97,7 @@ function render(){
   const cur=room.players[room.turn%room.players.length];
   const seconds=room.endsAt?Math.max(0,Math.ceil((room.endsAt-room.serverTime)/1000)):room.duration*60;
   const mm=String(Math.floor(seconds/60)).padStart(2,'0'), ss=String(seconds%60).padStart(2,'0');
+  const timerUrgent=seconds<120?' urgent':'';
   const maxMoney=Math.max(...room.players.map(p=>p.money+p.lands.length*20),1);
   const byWorth=[...room.players].sort((a,b)=>(b.money+b.lands.length*20)-(a.money+a.lands.length*20));
 
@@ -99,7 +107,7 @@ function render(){
     <div class="spec-header" style="grid-column:1/-1">
       <h1>🎲 달란트마블</h1>
       <div class="spec-hud">
-        <span id="spec-timer">⏱ ${mm}:${ss}</span>
+        <span id="spec-timer"${timerUrgent?` class="urgent"`:''}>⏱ ${mm}:${ss}</span>
         <span id="spec-stars">⭐ ${room.sharedStars||0} / ${room.sharedGoal||12}</span>
         <span class="room" style="font-size:clamp(14px,2vw,20px)">방 코드: ${room.id}</span>
       </div>
