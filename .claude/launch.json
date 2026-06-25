@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "blog-post",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "3333", "--directory", "C:\\Users\\이창륜pc\\Documents\\blog-post"],
+      "port": 3333
+    }
+  ]
+}
